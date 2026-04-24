@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Tag } from '../../types';
 import { ConfidenceSlider } from './ConfidenceSlider';
+import { TagTooltip } from './TagTooltip';
 import { getConfidenceColor } from '../../utils/helpers';
 import { Edit2, Trash2, Link2, ExternalLink, X } from 'lucide-react';
 
@@ -62,13 +63,15 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
             autoFocus
           />
         ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex-1 text-left font-bold font-heading text-base hover:text-accent-primary transition-colors"
-            title={tag.description || "点击编辑"}
-          >
-            {tag.name}
-          </button>
+          <TagTooltip content={tag.description}>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex-1 text-left font-bold font-heading text-base hover:text-accent-primary transition-colors cursor-help"
+              title={tag.description ? undefined : "点击编辑"}
+            >
+              {tag.name}
+            </button>
+          </TagTooltip>
         )}
       </div>
 

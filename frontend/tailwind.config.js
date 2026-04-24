@@ -28,6 +28,7 @@ export default {
         'confidence-high': '#22C55E',
         'confidence-mid': '#EAB308',
         'confidence-low': '#94A3B8',
+        'bg-tooltip': '#1A1614',
       },
       fontFamily: {
         heading: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
