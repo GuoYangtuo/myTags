@@ -90,7 +90,7 @@ export function Sidebar({ onAddPage }: SidebarProps) {
                 <>
                   <span className="flex-1 font-medium text-sm truncate">{page.name}</span>
                   {page._count && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${currentPage?.id === page.id ? 'bg-white/20' : 'bg-bg-secondary'}`}>
+                    <span className={`group-hover:hidden text-xs px-1.5 py-0.5 rounded-full ${currentPage?.id === page.id ? 'bg-white/20' : 'bg-bg-secondary'}`}>
                       {page._count.tags}
                     </span>
                   )}

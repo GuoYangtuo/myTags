@@ -73,7 +73,7 @@ export function PageEditor() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-            <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditDescOpen(true); }}>
+            <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditName(currentPage.name); setEditDescOpen(true); }}>
               <Settings size={14} className="mr-1" />
               <span className="hidden sm:inline">编辑页面</span>
               <span className="sm:hidden">编辑</span>
