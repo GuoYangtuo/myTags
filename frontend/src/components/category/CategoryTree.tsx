@@ -209,13 +209,17 @@ function SortableCategoryNode({
             </div>
           </SortableContext>
 
-          {(category.tags ?? []).length === 0 && !showAddTag && (
+          {(category.tags ?? []).length === 0 && (category.children ?? []).length === 0 && !showAddTag && (
             <button
               onClick={() => setShowAddTag(true)}
-              className="w-full py-4 border-2 border-dashed border-border-light rounded-xl text-sm text-text-secondary hover:border-accent-primary hover:text-accent-primary transition-colors"
+              className="w-full py-4 border-2 border-dashed border-border-light rounded-xl text-sm text-text-secondary hover:border-accent-primary hover:text-accent-primary transition-colors mb-3"
             >
               + 添加标签
             </button>
+          )}
+
+          {(category.tags ?? []).length > 0 && (category.children ?? []).length > 0 && (
+            <div className="mb-3" />
           )}
 
           {(category.children ?? []).map((child) => (
