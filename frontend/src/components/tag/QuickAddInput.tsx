@@ -85,18 +85,19 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
 
   return (
     <div className="bg-bg-card rounded-xl border-2 border-border-strong p-3 md:p-4 mb-4 md:mb-6 shadow-[3px_3px_0_var(--color-border-strong)]">
-      <div className="flex flex-col sm:flex-row gap-2 md:gap-3 mb-3">
-        <div className="relative flex-shrink-0" ref={dropdownRef}>
+      {/* Desktop: dropdown | input | button */}
+      <div className="hidden md:flex flex-row gap-2 md:gap-3 mb-3">
+        <div className="relative flex-shrink-0 flex items-center" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-border-strong bg-bg-secondary hover:bg-border-light transition-colors text-sm font-medium min-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis w-full sm:w-auto"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-border-strong bg-bg-secondary hover:bg-border-light transition-colors text-sm font-medium h-10 min-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis"
           >
             <span className="truncate">{selectedCat?.cat.name || '选择分类'}</span>
             <ChevronDown size={14} className={`flex-shrink-0 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
 
           {showDropdown && (
-            <div className="absolute bottom-full left-0 sm:top-full sm:bottom-auto mb-1 sm:mb-1 w-full min-w-[160px] bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
+            <div className="absolute top-full left-0 mt-1 w-full min-w-[160px] bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
               {flatCategories.map(({ cat, depth }) => (
                 <button
                   key={cat.id}
@@ -122,16 +123,68 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
           onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleSubmit(); }}
           placeholder="今天又新增了什么成分？"
-          className="flex-1 px-3 md:px-4 py-2 rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary text-base"
+          className="flex-1 px-3 md:px-4 py-2 rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary text-base h-10"
         />
 
         <button
           onClick={handleSubmit}
           disabled={!value.trim() || !selectedCatId}
-          className="flex-shrink-0 w-full sm:w-10 h-10 rounded-lg bg-accent-primary text-white border-2 border-border-strong flex items-center justify-center hover:bg-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0_var(--color-border-strong)]"
+          className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent-primary text-white border-2 border-border-strong flex items-center justify-center hover:bg-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0_var(--color-border-strong)]"
         >
           <Plus size={20} />
         </button>
+      </div>
+
+      {/* Mobile: input | dropdown + button */}
+      <div className="flex flex-col gap-2 md:hidden mb-3">
+        <input
+          type="text"
+          value={value}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleSubmit(); }}
+          placeholder="今天又新增了什么成分？"
+          className="w-full px-3 py-2 rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary text-base h-10"
+        />
+
+        <div className="flex gap-2">
+          <div className="relative flex-1 flex items-center" ref={dropdownRef}>
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-border-strong bg-bg-secondary hover:bg-border-light transition-colors text-sm font-medium h-10 w-full whitespace-nowrap overflow-hidden text-ellipsis"
+            >
+              <span className="truncate">{selectedCat?.cat.name || '选择分类'}</span>
+              <ChevronDown size={14} className={`flex-shrink-0 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showDropdown && (
+              <div className="absolute bottom-full left-0 mb-1 w-full min-w-[160px] bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
+                {flatCategories.map(({ cat, depth }) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => { setSelectedCatId(cat.id); setShowDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary transition-colors ${cat.id === selectedCatId ? 'bg-accent-primary/10 text-accent-primary font-medium' : ''}`}
+                    style={{ paddingLeft: 12 + depth * 16 }}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+                {flatCategories.length === 0 && (
+                  <div className="px-3 py-4 text-center text-sm text-text-secondary">
+                    还没有分类，先创建一个吧
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={!value.trim() || !selectedCatId}
+            className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent-primary text-white border-2 border-border-strong flex items-center justify-center hover:bg-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0_var(--color-border-strong)]"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 px-1">
