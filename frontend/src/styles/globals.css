@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Noto Sans SC", system-ui, sans-serif;
+    background-color: #F5F0EB;
+    color: #1A1614;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: #FF6B35;
+    color: white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #EDE7DD;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #D4CEC6;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6B635A;
+  }
+}
+
+@layer components {
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #1A1614;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    box-shadow: 2px 2px 0 #1A1614;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #1A1614;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 #1A1614;
+  }
+
+  .tag-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .tag-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 0 #1A1614;
+  }
+
+  .tag-card.dragging {
+    transform: rotate(2deg) scale(1.02);
+    opacity: 0.9;
+    box-shadow: 6px 6px 0 #1A1614;
+    z-index: 999;
+  }
+
+  .category-enter {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .tag-enter {
+    animation: tagEnter 0.25s ease-out;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .modal-backdrop {
+    animation: backdropIn 0.2s ease-out;
+  }
+
+  .modal-content {
+    animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tagEnter {
+  from { opacity: 0; transform: translateY(-12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}

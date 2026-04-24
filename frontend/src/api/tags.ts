@@ -1,0 +1,19 @@
+import api from './client';
+import type { Tag } from '../types';
+
+export interface CreateTagPayload {
+  pageId: number;
+  categoryId: number;
+  name: string;
+  confidence?: number;
+  navUrl?: string | null;
+}
+
+export const tagApi = {
+  create: (data: CreateTagPayload) => api.post<Tag>('/tags', data).then(r => r.data),
+  update: (id: number, data: Partial<Pick<Tag, 'name' | 'confidence' | 'navUrl' | 'categoryId' | 'sortOrder'>>) =>
+    api.put<Tag>(`/tags/${id}`, data).then(r => r.data),
+  delete: (id: number) => api.delete(`/tags/${id}`).then(() => {}),
+  reorder: (items: { id: number; categoryId: number; sortOrder: number }[]) =>
+    api.put('/tags/reorder', { items }).then(() => {}),
+};
