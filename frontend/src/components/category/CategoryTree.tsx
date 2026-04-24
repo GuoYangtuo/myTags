@@ -106,7 +106,7 @@ function SortableCategoryNode({
           onClick={() => setExpanded(!expanded)}
           className="p-0.5 rounded hover:bg-bg-secondary transition-colors"
         >
-          {(category.children ?? []).length > 0 || category.tags.length > 0 ? (
+          {(category.children ?? []).length > 0 || (category.tags ?? []).length > 0 ? (
             expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
           ) : (
             <span className="w-4 h-4 inline-block" />
@@ -137,7 +137,7 @@ function SortableCategoryNode({
           >
             {category.name}
             <span className="ml-1 md:ml-2 text-xs font-normal text-text-secondary whitespace-nowrap">
-              ({(category.children ?? []).reduce((s, c) => s + c.tags.length, 0)} 项)
+              ({(category.children ?? []).reduce((s, c) => s + (c.tags ?? []).length, 0)} 项)
             </span>
           </button>
         )}
