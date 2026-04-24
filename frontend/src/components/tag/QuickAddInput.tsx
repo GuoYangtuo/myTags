@@ -97,24 +97,24 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
           </button>
 
           {showDropdown && (
-            <div className="absolute top-full left-0 mt-1 w-full min-w-[160px] bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
-              {flatCategories.map(({ cat, depth }) => (
-                <button
-                  key={cat.id}
-                  onClick={() => { setSelectedCatId(cat.id); setShowDropdown(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary transition-colors ${cat.id === selectedCatId ? 'bg-accent-primary/10 text-accent-primary font-medium' : ''}`}
-                  style={{ paddingLeft: 12 + depth * 16 }}
-                >
-                  {cat.name}
-                </button>
-              ))}
-              {flatCategories.length === 0 && (
-                <div className="px-3 py-4 text-center text-sm text-text-secondary">
-                  还没有分类，先创建一个吧
-                </div>
-              )}
-            </div>
-          )}
+              <div className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
+                {flatCategories.map(({ cat, depth }) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => { setSelectedCatId(cat.id); setShowDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary transition-colors ${cat.id === selectedCatId ? 'bg-accent-primary/10 text-accent-primary font-medium' : ''}`}
+                    style={{ paddingLeft: 12 + depth * 16 }}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+                {flatCategories.length === 0 && (
+                  <div className="px-3 py-4 text-center text-sm text-text-secondary">
+                    还没有分类，先创建一个吧
+                  </div>
+                )}
+              </div>
+            )}
         </div>
 
         <input
@@ -157,7 +157,7 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
             </button>
 
             {showDropdown && (
-              <div className="absolute bottom-full left-0 mb-1 w-full min-w-[160px] bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
+              <div className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
                 {flatCategories.map(({ cat, depth }) => (
                   <button
                     key={cat.id}
