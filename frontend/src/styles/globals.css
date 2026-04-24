@@ -85,7 +85,9 @@
   input[type="range"].confidence-slider {
     -webkit-appearance: none;
     appearance: none;
-    flex: 1;
+    width: 100%;
+    flex-shrink: 1;
+    min-width: 0;
     height: 8px;
     border-radius: 4px;
     outline: none;

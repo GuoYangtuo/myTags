@@ -91,7 +91,7 @@ export default function App() {
                   <h1 className="text-4xl font-bold font-heading mb-3">myTags</h1>
                   <p className="text-text-secondary mb-8 leading-relaxed">
                     创建你的个人标签页面<br />
-                    让新朋友快速了解你是什么成分
+                    让新朋友快速了解你的成分
                   </p>
                   <div className="space-y-3">
                     <button

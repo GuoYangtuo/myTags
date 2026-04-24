@@ -163,34 +163,34 @@ function SortableCategoryNode({
       </div>
 
       {showAddChild && (
-        <div className="ml-6 mb-2 flex gap-2 category-enter">
+        <div className="ml-4 sm:ml-6 mb-2 flex gap-2 flex-wrap sm:flex-nowrap category-enter">
           <input
             type="text"
             value={newChildName}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewChildName(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleChildSubmit(); if (e.key === 'Escape') setShowAddChild(false); }}
             placeholder="子分类名称..."
-            className="flex-1 px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-secondary"
+            className="min-w-0 flex-1 px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-secondary"
             autoFocus
           />
-          <button onClick={handleChildSubmit} className="px-3 py-1.5 text-sm bg-accent-secondary text-white rounded-lg border border-border-strong hover:opacity-90 transition-opacity">添加</button>
-          <button onClick={() => setShowAddChild(false)} className="px-3 py-1.5 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors">取消</button>
+          <button onClick={handleChildSubmit} className="px-3 py-1.5 text-sm bg-accent-secondary text-white rounded-lg border border-border-strong hover:opacity-90 transition-opacity whitespace-nowrap">添加</button>
+          <button onClick={() => setShowAddChild(false)} className="px-3 py-1.5 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors whitespace-nowrap">取消</button>
         </div>
       )}
 
       {showAddTag && (
-        <div className="ml-6 mb-2 flex gap-2 category-enter">
+        <div className="ml-4 sm:ml-6 mb-2 flex gap-2 flex-wrap sm:flex-nowrap category-enter">
           <input
             type="text"
             value={newTagName}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTagName(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleTagSubmit(); if (e.key === 'Escape') setShowAddTag(false); }}
             placeholder="标签名称..."
-            className="flex-1 px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary"
+            className="min-w-0 flex-1 px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary"
             autoFocus
           />
-          <button onClick={handleTagSubmit} className="px-3 py-1.5 text-sm bg-accent-primary text-white rounded-lg border border-border-strong hover:bg-orange-600 transition-opacity">添加</button>
-          <button onClick={() => setShowAddTag(false)} className="px-3 py-1.5 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors">取消</button>
+          <button onClick={handleTagSubmit} className="px-3 py-1.5 text-sm bg-accent-primary text-white rounded-lg border border-border-strong hover:bg-orange-600 transition-opacity whitespace-nowrap">添加</button>
+          <button onClick={() => setShowAddTag(false)} className="px-3 py-1.5 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors whitespace-nowrap">取消</button>
         </div>
       )}
 
@@ -294,18 +294,18 @@ export function CategoryTree({
       </SortableContext>
 
       {showAddRoot ? (
-        <div className="flex gap-2 mt-2 ml-2 category-enter">
+        <div className="flex gap-2 mt-2 ml-2 flex-wrap sm:flex-nowrap category-enter">
           <input
             type="text"
             value={newRootName}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewRootName(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleRootSubmit(); if (e.key === 'Escape') setShowAddRoot(false); }}
             placeholder="分类名称..."
-            className="flex-1 px-4 py-2 text-sm rounded-xl border-2 border-border-strong outline-none focus:border-accent-primary"
+            className="min-w-0 flex-1 px-4 py-2 text-sm rounded-xl border-2 border-border-strong outline-none focus:border-accent-primary"
             autoFocus
           />
-          <button onClick={handleRootSubmit} className="px-4 py-2 text-sm bg-accent-primary text-white rounded-xl border-2 border-border-strong hover:bg-orange-600 transition-colors shadow-[2px_2px_0_var(--color-border-strong)]">添加</button>
-          <button onClick={() => setShowAddRoot(false)} className="px-4 py-2 text-sm bg-bg-secondary rounded-xl border-2 border-border-strong hover:bg-border-light transition-colors">取消</button>
+          <button onClick={handleRootSubmit} className="px-4 py-2 text-sm bg-accent-primary text-white rounded-xl border-2 border-border-strong hover:bg-orange-600 transition-colors shadow-[2px_2px_0_var(--color-border-strong)] whitespace-nowrap">添加</button>
+          <button onClick={() => setShowAddRoot(false)} className="px-4 py-2 text-sm bg-bg-secondary rounded-xl border-2 border-border-strong hover:bg-border-light transition-colors whitespace-nowrap">取消</button>
         </div>
       ) : (
         <button

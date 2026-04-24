@@ -54,7 +54,7 @@ export function PageEditor() {
   return (
     <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
-        <div className="flex items-start justify-between mb-6 md:mb-8 gap-3">
+        <div className="flex items-start justify-between mb-4 gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <button
