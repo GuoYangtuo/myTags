@@ -27,6 +27,7 @@ export function TagDescriptionTooltip({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const isHoveringRef = useRef(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const [descMode, setDescMode] = useState<'write' | 'preview'>('write');
   const [editDesc, setEditDesc] = useState(description);
@@ -34,6 +35,13 @@ export function TagDescriptionTooltip({
   useEffect(() => {
     setEditDesc(description);
   }, [description]);
+
+  const clearShowTimer = useCallback(() => {
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
+  }, []);
 
   const clearHideTimer = useCallback(() => {
     if (hideTimerRef.current) {
@@ -86,14 +94,20 @@ export function TagDescriptionTooltip({
     if (!description && !editable) return;
     isHoveringRef.current = true;
     clearHideTimer();
-    measure();
-    setVisible(true);
-  }, [description, editable, clearHideTimer, measure]);
+    clearShowTimer();
+    showTimerRef.current = setTimeout(() => {
+      if (isHoveringRef.current) {
+        measure();
+        setVisible(true);
+      }
+    }, 500);
+  }, [description, editable, clearHideTimer, clearShowTimer, measure]);
 
   const hide = useCallback(() => {
     isHoveringRef.current = false;
+    clearShowTimer();
     scheduleHide();
-  }, [scheduleHide]);
+  }, [scheduleHide, clearShowTimer]);
 
   const onPopoverEnter = useCallback(() => {
     isHoveringRef.current = true;
@@ -116,9 +130,10 @@ export function TagDescriptionTooltip({
 
   useEffect(() => {
     return () => {
+      clearShowTimer();
       clearHideTimer();
     };
-  }, [clearHideTimer]);
+  }, [clearShowTimer, clearHideTimer]);
 
   if (!description && !editable) return <>{children}</>;
 
