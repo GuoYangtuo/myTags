@@ -34,6 +34,7 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
   const [showLabelDropdown, setShowLabelDropdown] = useState(false);
   const [customLabel, setCustomLabel] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement>(null);
   const labelDropdownRef = useRef<HTMLDivElement>(null);
 
   const flatCategories: FlatCat[] = [];
@@ -50,6 +51,9 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+      if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
       if (labelDropdownRef.current && !labelDropdownRef.current.contains(e.target as Node)) {
@@ -147,7 +151,7 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
         />
 
         <div className="flex gap-2">
-          <div className="relative flex-1 flex items-center" ref={dropdownRef}>
+          <div className="relative flex-1 flex items-center" ref={mobileDropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-border-strong bg-bg-secondary hover:bg-border-light transition-colors text-sm font-medium h-10 w-full whitespace-nowrap overflow-hidden text-ellipsis"
