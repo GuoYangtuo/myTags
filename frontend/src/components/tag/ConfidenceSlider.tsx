@@ -41,16 +41,19 @@ export function ConfidenceSlider({ value, onChange, label = '置信度', size = 
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-      <span style={{ fontSize: '14px', color: '#6b7280', whiteSpace: 'nowrap' }}>{label}</span>
+      {label && (
+        <span style={{ fontSize: '14px', color: '#6b7280', whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
+      )}
       <div className={`confidence-slider-wrapper ${size === 'sm' ? 'sm' : ''}`} style={{ flex: 1, minWidth: 0 }}>
-        <input
-          type="range"
-          min={-20}
-          max={120}
-          value={localValue}
-          onChange={handleChange}
-          className={`confidence-slider ${size === 'sm' ? 'sm' : ''}`}
-        />
+          <input
+              type="range"
+              min={-20}
+              max={120}
+              value={localValue}
+              onChange={handleChange}
+              className={`confidence-slider ${size === 'sm' ? 'sm' : ''}`}
+              style={size === 'sm' ? { height: '8px' } : undefined}
+            />
       </div>
       <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '14px', color: '#6b7280' }}>
         {localValue}%

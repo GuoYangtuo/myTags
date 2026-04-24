@@ -29,7 +29,7 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
   const [selectedCatId, setSelectedCatId] = useState<number | null>(currentCategoryId || null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [useConfidence, setUseConfidence] = useState(true);
-  const [confidence, setConfidence] = useState(50);
+  const [confidence, setConfidence] = useState(100);
   const [confidenceLabel, setConfidenceLabel] = useState('置信度');
   const [showLabelDropdown, setShowLabelDropdown] = useState(false);
   const [customLabel, setCustomLabel] = useState('');
@@ -65,10 +65,10 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
     const finalConfidence = useConfidence ? confidence : NO_CONFIDENCE_VALUE;
     onAdd(value.trim(), selectedCatId, finalConfidence, confidenceLabel);
     setValue('');
-    setUseConfidence(true);
-    setConfidence(50);
+    setConfidence(100);
     setConfidenceLabel('置信度');
     setCustomLabel('');
+    setShowLabelDropdown(false);
   };
 
   const handleLabelSelect = (label: string) => {
@@ -135,21 +135,31 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
       </div>
 
       <div className="flex items-center gap-2 px-1">
-        <label className="flex items-center gap-1.5 cursor-pointer select-none flex-shrink-0">
-          <input
-            type="checkbox"
-            checked={useConfidence}
-            onChange={(e) => setUseConfidence(e.target.checked)}
-            className="w-3.5 h-3.5 rounded accent-orange-500 cursor-pointer"
-          />
+        <label className="flex items-center gap-2 cursor-pointer select-none flex-shrink-0">
+          <div className="relative">
+            <input
+              type="checkbox"
+              checked={useConfidence}
+              onChange={(e) => setUseConfidence(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-7 h-7 rounded-lg border-2 border-border-strong bg-bg-card peer-checked:bg-accent-primary peer-checked:border-border-strong shadow-[2px_2px_0_var(--color-border-strong)] transition-all cursor-pointer hover:border-accent-primary/60" />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {useConfidence && (
+                <svg className="w-4 h-4 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="2,6 5,9 10,3" />
+                </svg>
+              )}
+            </div>
+          </div>
           {useConfidence ? (
             <div className="relative" ref={labelDropdownRef}>
               <button
                 onClick={() => setShowLabelDropdown(!showLabelDropdown)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border-light hover:border-accent-secondary transition-colors text-xs text-text-secondary whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg border-2 border-border-strong hover:border-accent-secondary transition-colors text-sm text-text-secondary whitespace-nowrap shadow-[2px_2px_0_var(--color-border-strong)] hover:shadow-[2px_2px_0_var(--color-accent-secondary)]"
               >
                 <span>{activeLabel}</span>
-                <ChevronDown size={10} className={`transition-transform ${showLabelDropdown ? 'rotate-180' : ''}`} />
+                <ChevronDown size={12} className={`transition-transform ${showLabelDropdown ? 'rotate-180' : ''}`} />
               </button>
               {showLabelDropdown && (
                 <div className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[3px_3px_0_var(--color-border-strong)] z-20 py-1 min-w-[120px] category-enter">
