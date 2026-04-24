@@ -45,19 +45,19 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
   };
 
   return (
-    <div className="bg-bg-card rounded-xl border-2 border-border-strong p-4 mb-6 shadow-[3px_3px_0_var(--color-border-strong)]">
-      <div className="flex gap-3">
+    <div className="bg-bg-card rounded-xl border-2 border-border-strong p-3 md:p-4 mb-4 md:mb-6 shadow-[3px_3px_0_var(--color-border-strong)]">
+      <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
         <div className="relative flex-shrink-0" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-border-strong bg-bg-secondary hover:bg-border-light transition-colors text-sm font-medium min-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-border-strong bg-bg-secondary hover:bg-border-light transition-colors text-sm font-medium min-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis w-full sm:w-auto"
           >
             <span className="truncate">{selectedCat?.cat.name || '选择分类'}</span>
             <ChevronDown size={14} className={`flex-shrink-0 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
 
           {showDropdown && (
-            <div className="absolute top-full left-0 mt-1 w-56 bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
+            <div className="absolute bottom-full left-0 sm:top-full sm:bottom-auto mb-1 sm:mb-1 w-full min-w-[160px] bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter">
               {flatCategories.map(({ cat, depth }) => (
                 <button
                   key={cat.id}
@@ -82,14 +82,14 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
           value={value}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
           onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleSubmit(); }}
-          placeholder="今天又新增了什么成分？按回车添加..."
-          className="flex-1 px-4 py-2 rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary text-base"
+          placeholder="今天又新增了什么成分？"
+          className="flex-1 px-3 md:px-4 py-2 rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary text-base"
         />
 
         <button
           onClick={handleSubmit}
           disabled={!value.trim() || !selectedCatId}
-          className="flex-shrink-0 w-10 h-10 rounded-lg bg-accent-primary text-white border-2 border-border-strong flex items-center justify-center hover:bg-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0_var(--color-border-strong)]"
+          className="flex-shrink-0 w-full sm:w-10 h-10 rounded-lg bg-accent-primary text-white border-2 border-border-strong flex items-center justify-center hover:bg-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0_var(--color-border-strong)]"
         >
           <Plus size={20} />
         </button>

@@ -1,16 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui';
+import { Menu } from 'lucide-react';
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 bg-bg-primary border-b-2 border-border-strong">
-      <div className="flex items-center justify-between px-6 py-3 max-w-[1400px] mx-auto">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent-primary border-2 border-border-strong flex items-center justify-center shadow-[2px_2px_0_var(--color-border-strong)]">
+      <div className="flex items-center justify-between px-4 md:px-6 py-3 max-w-[1400px] mx-auto">
+        <div className="flex items-center gap-2 md:gap-3">
+          <button
+            onClick={onMenuClick}
+            className="md:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-bg-secondary transition-colors"
+            aria-label="打开菜单"
+          >
+            <Menu size={22} />
+          </button>
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-accent-primary border-2 border-border-strong flex items-center justify-center shadow-[2px_2px_0_var(--color-border-strong)]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
               <line x1="7" y1="7" x2="7.01" y2="7" />

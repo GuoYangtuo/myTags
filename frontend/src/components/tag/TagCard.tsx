@@ -43,7 +43,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
       {tag.navUrl && (
         <button
           onClick={handleLinkClick}
-          className="absolute top-2 right-2 p-1 rounded text-accent-tertiary hover:bg-accent-tertiary/10 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-2 right-2 p-1 rounded text-accent-tertiary hover:bg-accent-tertiary/10 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
           title={`打开链接: ${tag.navUrl}`}
         >
           <ExternalLink size={14} />
@@ -76,7 +76,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
         <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} />
       </div>
 
-      <div className="flex items-center justify-end gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center justify-end gap-1 mt-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
         <button
           onClick={() => setShowLinkInput(!showLinkInput)}
           className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors"

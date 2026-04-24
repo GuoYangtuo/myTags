@@ -5,6 +5,13 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    screens: {
+      'xs': '480px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+    },
     extend: {
       colors: {
         'bg-primary': '#F5F0EB',
@@ -26,6 +33,12 @@ export default {
         heading: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
         body: ['"Noto Sans SC"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      padding: {
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+      },
+      margin: {
+        'safe-bottom': 'env(safe-area-inset-bottom)',
       },
     },
   },

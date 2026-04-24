@@ -19,10 +19,10 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
   }, 0);
 
   return (
-    <div className={`${depth > 0 ? 'ml-6 pl-4 border-l-2 border-border-light' : ''} mb-4`}>
+    <div className={`${depth > 0 ? 'ml-3 sm:ml-6 pl-3 sm:pl-4 border-l-2 border-border-light' : ''} mb-4`}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 w-full px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/50 hover:bg-bg-secondary transition-colors text-left mb-2"
+        className="flex items-center gap-2 w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/50 hover:bg-bg-secondary transition-colors text-left mb-2"
       >
         {(category.children ?? []).length > 0 || category.tags.length > 0 ? (
           expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
@@ -35,7 +35,7 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
 
       {expanded && (
         <div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {(category.tags ?? []).map((tag) => (
               <div key={tag.id} className="bg-bg-card rounded-xl border-2 border-border-strong p-4 group">
                 <div className="flex items-center justify-between mb-3">
@@ -126,32 +126,32 @@ export function ShareViewPage() {
   return (
     <div className="min-h-screen bg-bg-primary">
       <header className="border-b-2 border-border-strong bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center gap-3 md:gap-4">
           <img
             src={`https://api.dicebear.com/7.x/shapes/svg?seed=${page.user!.avatarSeed}&backgroundColor=ff6b35`}
             alt="avatar"
-            className="w-10 h-10 rounded-full border-2 border-border-strong"
+            className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-border-strong flex-shrink-0"
           />
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold font-heading text-lg truncate">
+            <h1 className="font-bold font-heading text-base md:text-lg truncate">
               {page.user!.nickname} 的成分页面
             </h1>
             {page.description && (
-              <p className="text-sm text-text-secondary truncate">{page.description}</p>
+              <p className="text-xs md:text-sm text-text-secondary truncate">{page.description}</p>
             )}
           </div>
           {expiresAt && (
             <div className="flex items-center gap-1.5 text-xs text-text-secondary flex-shrink-0">
               <Clock size={12} />
-              {formatDate(expiresAt)}
+              <span className="hidden sm:inline">{formatDate(expiresAt)}</span>
             </div>
           )}
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold font-heading mb-1">{page.name}</h2>
+      <main className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
+        <div className="mb-6 md:mb-8">
+          <h2 className="text-xl md:text-2xl font-bold font-heading mb-1">{page.name}</h2>
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <User size={14} />
             <span>由 {page.user!.nickname} 创建</span>

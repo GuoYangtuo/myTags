@@ -93,7 +93,7 @@ function SortableCategoryNode({
   return (
     <div
       ref={setDropRef}
-      className={`${category.parentId === null ? '' : 'ml-4 pl-4 border-l-2 border-border-light'} mb-3`}
+      className={`${category.parentId === null ? '' : 'ml-2 sm:ml-4 pl-2 sm:pl-4 border-l-2 border-border-light'} mb-3`}
     >
       <div
         ref={setDragRef}
@@ -123,26 +123,27 @@ function SortableCategoryNode({
               if (e.key === 'Enter') { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim() }); setIsEditing(false); }
               if (e.key === 'Escape') { setEditName(category.name); setIsEditing(false); }
             }}
-            className="flex-1 px-2 py-1 text-sm font-bold rounded border border-accent-primary outline-none bg-white"
+            className="flex-1 px-2 py-1 text-sm font-bold rounded border border-accent-primary outline-none bg-white min-w-0"
             autoFocus
             {...attributes}
             {...listeners}
           />
         ) : (
           <button
-            className="flex-1 text-left font-bold font-heading text-base hover:text-accent-primary transition-colors cursor-grab active:cursor-grabbing"
+            className="flex-1 text-left font-bold font-heading text-sm md:text-base hover:text-accent-primary transition-colors cursor-grab active:cursor-grabbing truncate"
             onDoubleClick={() => { setIsEditing(true); }}
             {...attributes}
             {...listeners}
           >
             {category.name}
-            <span className="ml-2 text-xs font-normal text-text-secondary">
+            <span className="ml-1 md:ml-2 text-xs font-normal text-text-secondary whitespace-nowrap">
               ({(category.children ?? []).reduce((s, c) => s + c.tags.length, 0)} 项)
             </span>
           </button>
         )}
 
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Mobile: always show action buttons, Desktop: show on hover */}
+        <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button onClick={() => setShowAddChild(true)} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors" title="添加子分类">
             <FolderPlus size={14} className="text-accent-secondary" />
           </button>
@@ -196,7 +197,7 @@ function SortableCategoryNode({
       {expanded && (
         <div className={`ml-2 ${dragOver ? 'ring-1 ring-accent-primary ring-dashed rounded-lg p-2' : ''}`}>
           <SortableContext items={allTagIds} strategy={verticalListSortingStrategy}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {(category.tags ?? []).map((tag) => (
                 <SortableTagCard
                   key={tag.id}

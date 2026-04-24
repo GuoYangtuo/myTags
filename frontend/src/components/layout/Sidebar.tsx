@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { usePageStore } from '../../stores/pageStore';
 import { Plus, Edit2, Trash2, Layers } from 'lucide-react';
 
-export function Sidebar() {
+interface SidebarProps {
+  onAddPage?: () => void;
+}
+
+export function Sidebar({ onAddPage }: SidebarProps) {
   const { pages, currentPage, setCurrentPage, createPage, deletePage, updatePage } = usePageStore();
   const [showNewPage, setShowNewPage] = useState(false);
   const [newPageName, setNewPageName] = useState('');
@@ -32,7 +36,10 @@ export function Sidebar() {
             我的页面
           </h2>
           <button
-            onClick={() => setShowNewPage(true)}
+            onClick={() => {
+              if (onAddPage) onAddPage();
+              else setShowNewPage(true);
+            }}
             className="w-7 h-7 rounded-lg bg-accent-primary text-white border-2 border-border-strong flex items-center justify-center hover:bg-orange-600 transition-colors shadow-[2px_2px_0_var(--color-border-strong)]"
           >
             <Plus size={16} />
@@ -113,7 +120,10 @@ export function Sidebar() {
                 <Layers size={32} className="mx-auto opacity-30" />
               </div>
               还没有页面<br />
-              <button onClick={() => setShowNewPage(true)} className="text-accent-primary underline mt-1">创建一个吧</button>
+              <button onClick={() => {
+                if (onAddPage) onAddPage();
+                else setShowNewPage(true);
+              }} className="text-accent-primary underline mt-1">创建一个吧</button>
             </div>
           )}
         </div>

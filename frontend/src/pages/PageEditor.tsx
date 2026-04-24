@@ -5,9 +5,13 @@ import { CategoryTree } from '../components/category/CategoryTree';
 import { QuickAddInput } from '../components/tag/QuickAddInput';
 import { ShareModal } from '../components/share/ShareModal';
 import { Button, Modal, Input } from '../components/ui';
-import { Share2, Settings, Globe } from 'lucide-react';
+import { Share2, Settings, Globe, Menu } from 'lucide-react';
 
-export function PageEditor() {
+interface PageEditorProps {
+  onMenuClick?: () => void;
+}
+
+export function PageEditor({ onMenuClick }: PageEditorProps) {
   const { currentPage, updatePage, createTag, updateTag, deleteTag, reorderTags, createCategory, updateCategory, deleteCategory, reorderCategories } = usePageStore();
   const { user } = useAuthStore();
   const [shareOpen, setShareOpen] = useState(false);
@@ -33,10 +37,11 @@ export function PageEditor() {
   if (!currentPage) {
     return (
       <div className="flex-1 flex items-center justify-center text-text-secondary">
-        <div className="text-center">
-          <Globe size={64} className="mx-auto mb-4 opacity-20" />
-          <p className="text-lg font-medium">选择一个页面开始</p>
-          <p className="text-sm mt-1">或从左侧创建一个新页面</p>
+        <div className="text-center px-4">
+          <Globe size={48} className="mx-auto mb-4 opacity-20 md:size-16" />
+          <p className="text-base md:text-lg font-medium">选择一个页面开始</p>
+          <p className="text-sm mt-1 hidden md:block">或从左侧创建一个新页面</p>
+          <p className="text-sm mt-1 md:hidden">点击顶部菜单创建新页面</p>
         </div>
       </div>
     );
@@ -51,14 +56,21 @@ export function PageEditor() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-5xl mx-auto px-6 py-6">
-        <div className="flex items-start justify-between mb-8 gap-4">
+    <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
+        <div className="flex items-start justify-between mb-6 md:mb-8 gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <button
+                onClick={onMenuClick}
+                className="md:hidden p-1 -ml-1 rounded-lg hover:bg-bg-secondary transition-colors flex-shrink-0"
+                aria-label="打开页面列表"
+              >
+                <Menu size={20} />
+              </button>
+              <button
                 onClick={() => { setEditName(currentPage.name); setEditNameOpen(true); }}
-                className="text-3xl font-bold font-heading truncate hover:text-accent-primary transition-colors"
+                className="text-2xl md:text-3xl font-bold font-heading truncate hover:text-accent-primary transition-colors"
               >
                 {currentPage.name}
               </button>
@@ -71,10 +83,11 @@ export function PageEditor() {
             </p>
           </div>
 
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
             <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditDescOpen(true); }}>
               <Settings size={14} className="mr-1" />
-              编辑页面
+              <span className="hidden sm:inline">编辑页面</span>
+              <span className="sm:hidden">编辑</span>
             </Button>
             <Button variant="primary" size="sm" onClick={() => setShareOpen(true)}>
               <Share2 size={14} className="mr-1" />

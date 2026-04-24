@@ -7,11 +7,19 @@
     box-sizing: border-box;
   }
 
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     font-family: "Noto Sans SC", system-ui, sans-serif;
     background-color: #F5F0EB;
     color: #1A1614;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 
   ::selection {
@@ -35,6 +43,28 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: #6B635A;
+  }
+
+  /* Prevent body scroll when modal is open */
+  body.modal-open {
+    overflow: hidden;
+  }
+
+  /* Touch action improvements for drag and drop */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Prevent double-tap zoom on interactive elements */
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+
+  /* Ensure inputs don't auto-zoom on iOS */
+  @media screen and (max-width: 768px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
   }
 }
 
@@ -176,6 +206,16 @@
   .modal-content {
     animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
+
+  /* Mobile safe area for bottom navigation */
+  .h-safe-area-bottom {
+    height: env(safe-area-inset-bottom, 0px);
+    min-height: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 @keyframes slideDown {
@@ -201,4 +241,30 @@
 @keyframes modalIn {
   from { opacity: 0; transform: scale(0.92) translateY(10px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Mobile-specific adjustments */
+@media screen and (max-width: 768px) {
+  /* Disable hover effects on touch devices */
+  .tag-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Show action buttons always on mobile */
+  .group:hover .group-hover\:opacity-100 {
+    opacity: 1;
+  }
+
+  /* Prevent pull-to-refresh */
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* Landscape phone */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .max-w-5xl {
+    max-width: 100%;
+  }
 }
