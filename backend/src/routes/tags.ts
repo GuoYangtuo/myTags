@@ -61,9 +61,78 @@ router.post('/', async (req: AuthRequest, res: Response) => {
   }
 });
 
+const reorderSchema = z.object({
+  items: z.array(z.object({
+    id: z.number(),
+    categoryId: z.number(),
+    afterId: z.number().nullable(),
+  })),
+});
+
+router.put('/reorder', async (req: AuthRequest, res: Response) => {
+  try {
+    const data = reorderSchema.parse(req.body);
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of data.items) {
+        const afterTag = item.afterId
+          ? await tx.tag.findUnique({ where: { id: item.afterId } })
+          : null;
+
+        const afterOrder = afterTag?.sortOrder ?? -1;
+
+        const nextTag = await tx.tag.findFirst({
+          where: {
+            categoryId: item.categoryId,
+            id: { not: item.id },
+            sortOrder: { gt: afterOrder },
+          },
+          orderBy: { sortOrder: 'asc' },
+        });
+        const nextOrder = nextTag?.sortOrder ?? afterOrder + 1000;
+
+        let newOrder: number;
+        if (nextOrder - afterOrder <= 0.0001) {
+          // Precision exhausted — rebalance the entire category
+          const all = await tx.tag.findMany({
+            where: { categoryId: item.categoryId, id: { not: item.id } },
+            orderBy: { sortOrder: 'asc' },
+          });
+          const gap = 1000;
+          for (let i = 0; i < all.length; i++) {
+            await tx.tag.update({ where: { id: all[i].id }, data: { sortOrder: (i + 1) * gap } });
+          }
+          const afterIdx = afterTag ? all.findIndex((t) => t.id === afterTag.id) : -1;
+          newOrder = (afterIdx + 1) * gap + gap / 2;
+        } else {
+          newOrder = (afterOrder + nextOrder) / 2;
+        }
+
+        await tx.tag.update({
+          where: { id: item.id },
+          data: { categoryId: item.categoryId, sortOrder: newOrder },
+        });
+      }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors });
+      return;
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.put('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const tagId = parseInt(req.params.id as string);
+    if (isNaN(tagId)) {
+      res.status(400).json({ error: 'Invalid tag ID' });
+      return;
+    }
     const tag = await prisma.tag.findFirst({
       where: { id: tagId },
       include: { page: true },
@@ -95,6 +164,10 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const tagId = parseInt(req.params.id as string);
+    if (isNaN(tagId)) {
+      res.status(400).json({ error: 'Invalid tag ID' });
+      return;
+    }
     const tag = await prisma.tag.findFirst({
       where: { id: tagId },
       include: { page: true },
@@ -105,25 +178,6 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
     }
 
     await prisma.tag.delete({ where: { id: tagId } });
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-router.put('/reorder', async (req: AuthRequest, res: Response) => {
-  try {
-    const { items } = req.body as {
-      items: { id: number; categoryId: number; sortOrder: number }[];
-    };
-
-    for (const item of items) {
-      await prisma.tag.update({
-        where: { id: item.id },
-        data: { categoryId: item.categoryId, sortOrder: item.sortOrder },
-      });
-    }
     res.json({ success: true });
   } catch (err) {
     console.error(err);

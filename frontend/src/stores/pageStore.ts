@@ -17,11 +17,11 @@ interface PageState {
   createCategory: (pageId: number, name: string, parentId?: number | null, description?: string, confidence?: number, confidenceLabel?: string) => Promise<Category>;
   updateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => Promise<void>;
   deleteCategory: (id: number) => Promise<void>;
-  reorderCategories: (items: { id: number; parentId: number | null; sortOrder: number }[]) => Promise<void>;
+  reorderCategories: (items: { id: number; parentId: number | null; afterId: number | null }[]) => Promise<void>;
   createTag: (pageId: number, categoryId: number, name: string, confidence?: number, description?: string, confidenceLabel?: string) => Promise<Tag>;
   updateTag: (id: number, data: Partial<Pick<Tag, 'name' | 'description' | 'confidence' | 'confidenceLabel' | 'navUrl' | 'categoryId' | 'sortOrder'>>) => Promise<void>;
   deleteTag: (id: number) => Promise<void>;
-  reorderTags: (items: { id: number; categoryId: number; sortOrder: number }[]) => Promise<void>;
+  reorderTags: (items: { id: number; categoryId: number; afterId: number | null }[]) => Promise<void>;
   addTagToPage: (tag: Tag) => void;
   updateTagInPage: (tag: Tag) => void;
   removeTagFromPage: (tagId: number) => void;

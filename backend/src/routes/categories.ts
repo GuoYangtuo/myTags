@@ -112,14 +112,54 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
 
 router.put('/reorder', async (req: AuthRequest, res: Response) => {
   try {
-    const { items } = req.body as { items: { id: number; parentId: number | null; sortOrder: number }[] };
+    const { items } = req.body as { items: { id: number; parentId: number | null; afterId: number | null }[] };
+    const catMap = Object.fromEntries(
+      (await prisma.category.findMany({ where: { id: { in: items.map((i) => i.id) } } })).map((c) => [c.id, c])
+    );
 
-    for (const item of items) {
-      await prisma.category.update({
-        where: { id: item.id },
-        data: { parentId: item.parentId, sortOrder: item.sortOrder },
-      });
-    }
+    await prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const cat = catMap[item.id];
+        if (!cat) continue;
+
+        const afterCat = item.afterId
+          ? await tx.category.findUnique({ where: { id: item.afterId } })
+          : null;
+        const afterOrder = afterCat?.sortOrder ?? -1;
+
+        const nextCat = await tx.category.findFirst({
+          where: {
+            pageId: cat.pageId,
+            parentId: item.parentId,
+            id: { not: item.id },
+            sortOrder: { gt: afterOrder },
+          },
+          orderBy: { sortOrder: 'asc' },
+        });
+        const nextOrder = nextCat?.sortOrder ?? afterOrder + 1000;
+
+        let newOrder: number;
+        if (nextOrder - afterOrder <= 0.0001) {
+          const all = await tx.category.findMany({
+            where: { pageId: cat.pageId, parentId: item.parentId, id: { not: item.id } },
+            orderBy: { sortOrder: 'asc' },
+          });
+          const gap = 1000;
+          for (let i = 0; i < all.length; i++) {
+            await tx.category.update({ where: { id: all[i].id }, data: { sortOrder: (i + 1) * gap } });
+          }
+          const afterIdx = afterCat ? all.findIndex((c) => c.id === afterCat.id) : -1;
+          newOrder = (afterIdx + 1) * gap + gap / 2;
+        } else {
+          newOrder = (afterOrder + nextOrder) / 2;
+        }
+
+        await tx.category.update({
+          where: { id: item.id },
+          data: { parentId: item.parentId, sortOrder: newOrder },
+        });
+      }
+    });
     res.json({ success: true });
   } catch (err) {
     console.error(err);

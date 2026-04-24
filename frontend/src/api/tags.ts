@@ -16,6 +16,6 @@ export const tagApi = {
   update: (id: number, data: Partial<Pick<Tag, 'name' | 'description' | 'confidence' | 'confidenceLabel' | 'navUrl' | 'categoryId' | 'sortOrder'>>) =>
     api.put<Tag>(`/tags/${id}`, data).then(r => r.data),
   delete: (id: number) => api.delete(`/tags/${id}`).then(() => {}),
-  reorder: (items: { id: number; categoryId: number; sortOrder: number }[]) =>
+  reorder: (items: { id: number; categoryId: number; afterId: number | null }[]) =>
     api.put('/tags/reorder', { items }).then(() => {}),
 };

@@ -45,7 +45,7 @@ model Category {
   description      String   @default("")
   confidence       Int      @default(50)
   confidenceLabel  String   @default("置信度")
-  sortOrder        Int      @default(0)
+  sortOrder        Float    @default(0)
   createdAt        DateTime @default(now())
 
   page     Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
@@ -67,7 +67,7 @@ model Tag {
   confidence       Int      @default(50)
   confidenceLabel  String   @default("置信度")
   navUrl           String?
-  sortOrder        Int      @default(0)
+  sortOrder        Float    @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

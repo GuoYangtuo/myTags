@@ -26,8 +26,8 @@ interface CategoryTreeProps {
   onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => void;
   onDeleteCategory: (id: number) => void;
   onCreateCategory: (name: string, parentId?: number | null) => void;
-  onReorderTags: (items: { id: number; categoryId: number; sortOrder: number }[]) => void;
-  onReorderCategories: (items: { id: number; parentId: number | null; sortOrder: number }[]) => void;
+  onReorderTags: (items: { id: number; categoryId: number; afterId: number | null }[]) => void;
+  onReorderCategories: (items: { id: number; parentId: number | null; afterId: number | null }[]) => void;
   onMoveTag: (tagId: number, targetCategoryId: number) => void;
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
 }
@@ -94,8 +94,8 @@ function SortableCategoryNode({
   onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => void;
   onDeleteCategory: (id: number) => void;
   onCreateCategory: (name: string, parentId?: number | null) => void;
-  onReorderTags: (items: { id: number; categoryId: number; sortOrder: number }[]) => void;
-  onReorderCategories: (items: { id: number; parentId: number | null; sortOrder: number }[]) => void;
+  onReorderTags: (items: { id: number; categoryId: number; afterId: number | null }[]) => void;
+  onReorderCategories: (items: { id: number; parentId: number | null; afterId: number | null }[]) => void;
   onMoveTag: (tagId: number, targetCategoryId: number) => void;
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
   activeItemId: string | null;
@@ -477,49 +477,49 @@ export function CategoryTree({
         if (side === 'child' && targetId.startsWith('cat-drop-')) {
           const targetCatId = Number(targetId.replace('cat-drop-', ''));
           onMoveTag(tagId, targetCatId);
-        } else if (side === 'left' && targetId.startsWith('tag-')) {
+        } else if (targetId.startsWith('tag-')) {
           const refTagId = Number(targetId.replace('tag-', ''));
           const refTagCat = allCategories.find((c) => c.tags?.some((t) => t.id === refTagId));
           if (refTagCat) {
-            const refTag = refTagCat.tags?.find((t) => t.id === refTagId);
-            if (refTag) {
-              onReorderTags([{ id: tagId, categoryId: refTagCat.id, sortOrder: refTag.sortOrder - 1 }]);
+            const sortedTags = [...(refTagCat.tags ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+            const refIdx = sortedTags.findIndex((t) => t.id === refTagId);
+            if (side === 'left') {
+              const afterId = refIdx > 0 ? sortedTags[refIdx - 1].id : null;
+              onReorderTags([{ id: tagId, categoryId: refTagCat.id, afterId }]);
+            } else if (side === 'right') {
+              onReorderTags([{ id: tagId, categoryId: refTagCat.id, afterId: refTagId }]);
             }
           }
-        } else if (side === 'right' && targetId.startsWith('tag-')) {
-          const refTagId = Number(targetId.replace('tag-', ''));
-          const refTagCat = allCategories.find((c) => c.tags?.some((t) => t.id === refTagId));
-          if (refTagCat) {
-            const refTag = refTagCat.tags?.find((t) => t.id === refTagId);
-            if (refTag) {
-              onReorderTags([{ id: tagId, categoryId: refTagCat.id, sortOrder: refTag.sortOrder + 1 }]);
-            }
-          }
-        } else if (side === 'left' && targetId.startsWith('cat-')) {
-          const targetCatId = Number(targetId.replace('cat-', ''));
-          onReorderTags([{ id: tagId, categoryId: targetCatId, sortOrder: 0 }]);
-        } else if (side === 'right' && targetId.startsWith('cat-')) {
+        } else if (targetId.startsWith('cat-')) {
           const targetCatId = Number(targetId.replace('cat-', ''));
           const targetCat = allCategories.find((c) => c.id === targetCatId);
-          const sortOrder = (targetCat?.tags?.length ?? 0) + 1;
-          onReorderTags([{ id: tagId, categoryId: targetCatId, sortOrder }]);
+          const sortedTags = [...(targetCat?.tags ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+          if (side === 'left') {
+            onReorderTags([{ id: tagId, categoryId: targetCatId, afterId: null }]);
+          } else if (side === 'right') {
+            const afterId = sortedTags.length > 0 ? sortedTags[sortedTags.length - 1].id : null;
+            onReorderTags([{ id: tagId, categoryId: targetCatId, afterId }]);
+          }
         }
       } else if (activeItem.type === 'category') {
         const draggedCatId = Number(draggedId.replace('cat-', ''));
         if (side === 'child' && targetId.startsWith('cat-drop-')) {
           const targetCatId = Number(targetId.replace('cat-drop-', ''));
           onMoveCategory(draggedCatId, targetCatId);
-        } else if (side === 'top' && targetId.startsWith('cat-')) {
+        } else if (targetId.startsWith('cat-')) {
           const refCatId = Number(targetId.replace('cat-', ''));
           const refCat = allCategories.find((c) => c.id === refCatId);
           if (refCat) {
-            onReorderCategories([{ id: draggedCatId, parentId: refCat.parentId, sortOrder: refCat.sortOrder - 1 }]);
-          }
-        } else if (side === 'bottom' && targetId.startsWith('cat-')) {
-          const refCatId = Number(targetId.replace('cat-', ''));
-          const refCat = allCategories.find((c) => c.id === refCatId);
-          if (refCat) {
-            onReorderCategories([{ id: draggedCatId, parentId: refCat.parentId, sortOrder: refCat.sortOrder + 1 }]);
+            const sortedSiblings = [...allCategories]
+              .filter((c) => c.parentId === refCat.parentId)
+              .sort((a, b) => a.sortOrder - b.sortOrder);
+            const refIdx = sortedSiblings.findIndex((c) => c.id === refCatId);
+            if (side === 'top') {
+              const afterId = refIdx > 0 ? sortedSiblings[refIdx - 1].id : null;
+              onReorderCategories([{ id: draggedCatId, parentId: refCat.parentId, afterId }]);
+            } else if (side === 'bottom') {
+              onReorderCategories([{ id: draggedCatId, parentId: refCat.parentId, afterId: refCatId }]);
+            }
           }
         }
       }
