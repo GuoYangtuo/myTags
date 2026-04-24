@@ -13,6 +13,7 @@ import {
   useSensors,
   PointerSensor,
   type DragStartEvent,
+  type DragOverEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
 
@@ -31,17 +32,38 @@ interface CategoryTreeProps {
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
 }
 
-function SortableTagCard({ tag, onUpdate, onDelete, activeItemId }: { tag: Tag; onUpdate: (d: Partial<Tag>) => void; onDelete: () => void; activeItemId: string | null }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: `tag-${tag.id}` });
+function SortableTagCard({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
+  tag: Tag;
+  onUpdate: (d: Partial<Tag>) => void;
+  onDelete: () => void;
+  activeItemId: string | null;
+  overInfo: { id: string; side: 'left' | 'right' | 'top' | 'bottom' | 'child' } | null;
+}) {
+  const { attributes, listeners, setNodeRef } = useSortable({ id: `tag-${tag.id}` });
   const isThisDragging = activeItemId === `tag-${tag.id}`;
+  const isThisOver = overInfo?.id === `tag-${tag.id}`;
+
   if (isThisDragging) {
     return (
-      <div ref={setNodeRef} className="tag-card rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 h-[72px]" />
+      <div ref={setNodeRef} className="tag-card rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5" style={{ minHeight: 72 }} />
     );
   }
+
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} {...attributes} {...listeners}>
-      <TagCard tag={tag} onUpdate={onUpdate} onDelete={onDelete} />
+    <div ref={setNodeRef} {...attributes} {...listeners} data-tag-card={`tag-${tag.id}`}>
+      <div className={`relative ${isThisOver ? 'opacity-40' : ''}`}>
+        {isThisOver && (
+          <div className="absolute inset-0 flex z-10 pointer-events-none">
+            <div className={`w-1/2 flex items-center justify-center text-xs font-bold text-white bg-accent-primary/80 ${overInfo?.side === 'left' ? '' : 'opacity-30'}`}>
+              {overInfo?.side === 'left' ? '← 放左边' : ''}
+            </div>
+            <div className={`w-1/2 flex items-center justify-center text-xs font-bold text-white bg-accent-primary/80 ${overInfo?.side === 'right' ? '' : 'opacity-30'}`}>
+              {overInfo?.side === 'right' ? '放右边 →' : ''}
+            </div>
+          </div>
+        )}
+        <TagCard tag={tag} onUpdate={onUpdate} onDelete={onDelete} />
+      </div>
     </div>
   );
 }
@@ -61,6 +83,7 @@ function SortableCategoryNode({
   onMoveTag,
   onMoveCategory,
   activeItemId,
+  overInfo,
 }: {
   category: Category;
   depth: number;
@@ -76,6 +99,7 @@ function SortableCategoryNode({
   onMoveTag: (tagId: number, targetCategoryId: number) => void;
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
   activeItemId: string | null;
+  overInfo: { id: string; side: 'left' | 'right' | 'top' | 'bottom' | 'child' } | null;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -92,9 +116,10 @@ function SortableCategoryNode({
   const [dragOver, setDragOver] = useState(false);
 
   const { setNodeRef: setDropRef } = useDroppable({ id: `cat-drop-${category.id}` });
-  const { attributes, listeners, setNodeRef: setDragRef, transform, transition } = useSortable({ id: `cat-${category.id}` });
+  const { attributes, listeners, setNodeRef: setDragRef } = useSortable({ id: `cat-${category.id}` });
 
-  const dragStyle = { transform: CSS.Transform.toString(transform), transition };
+  const isThisDragging = activeItemId === `cat-${category.id}`;
+  const isThisOver = overInfo?.id === `cat-${category.id}`;
 
   const handleChildSubmit = () => {
     if (!newChildName.trim()) return;
@@ -118,16 +143,29 @@ function SortableCategoryNode({
       ref={setDropRef}
       className={`${category.parentId === null ? '' : 'ml-2 sm:ml-4 pl-2 sm:pl-4 border-l-2 border-border-light'} mb-3`}
     >
-      {activeItemId === `cat-${category.id}` ? (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 mb-2 h-[52px]" />
+      {isThisDragging ? (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 mb-2" style={{ minHeight: 52 }} />
       ) : (
         <div
           ref={setDragRef}
-          style={dragStyle}
-          className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/70 group transition-all duration-150 mb-2 ${
+          data-cat-bar
+          className={`relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/70 group transition-all duration-150 mb-2 ${
             dragOver ? 'ring-2 ring-accent-primary ring-offset-2 bg-accent-primary/5' : ''
-          }`}
+          } ${isThisOver ? 'opacity-40' : ''}`}
         >
+          {/* Drop position overlay for categories */}
+          {isThisOver && activeItemId?.startsWith('cat-') && (
+            <div className="absolute inset-0 flex z-10 pointer-events-none rounded-xl overflow-hidden">
+              {overInfo?.side === 'top' && <div className="absolute top-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-2 py-0.5 rounded bg-accent-primary/80 text-white text-xs font-bold">放在上方</div></div>}
+              {overInfo?.side === 'bottom' && <div className="absolute bottom-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-2 py-0.5 rounded bg-accent-primary/80 text-white text-xs font-bold">放在下方</div></div>}
+              {overInfo?.side === 'child' && <div className="absolute inset-0 flex items-center justify-center"><div className="px-2 py-0.5 rounded bg-accent-primary/80 text-white text-xs font-bold">设为子类</div></div>}
+            </div>
+          )}
+          {isThisOver && activeItemId?.startsWith('tag-') && (category.tags ?? []).length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none rounded-xl">
+              <div className="px-2 py-0.5 rounded bg-accent-primary/80 text-white text-xs font-bold">放入此分类</div>
+            </div>
+          )}
           <button
             onClick={() => setExpanded(!expanded)}
             className="p-0.5 rounded hover:bg-bg-secondary transition-colors"
@@ -268,17 +306,18 @@ function SortableCategoryNode({
 
       {expanded && (
         <div className={`ml-2 ${dragOver ? 'ring-1 ring-accent-primary ring-dashed rounded-lg p-2' : ''}`}>
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {(category.tags ?? []).map((tag) => (
-              <SortableTagCard
-                key={tag.id}
-                tag={tag}
-                onUpdate={(data) => onUpdateTag(tag.id, data)}
-                onDelete={() => onDeleteTag(tag.id)}
-                activeItemId={activeItemId}
-              />
-            ))}
-          </div>
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(category.tags ?? []).map((tag) => (
+                <SortableTagCard
+                  key={tag.id}
+                  tag={tag}
+                  onUpdate={(data) => onUpdateTag(tag.id, data)}
+                  onDelete={() => onDeleteTag(tag.id)}
+                  activeItemId={activeItemId}
+                  overInfo={overInfo}
+                />
+              ))}
+            </div>
 
           {(category.tags ?? []).length === 0 && (category.children ?? []).length === 0 && !showAddTag && (
             <button
@@ -310,6 +349,7 @@ function SortableCategoryNode({
               onMoveTag={onMoveTag}
               onMoveCategory={onMoveCategory}
               activeItemId={activeItemId}
+              overInfo={overInfo}
             />
           ))}
         </div>
@@ -335,6 +375,14 @@ export function CategoryTree({
   const [showAddRoot, setShowAddRoot] = useState(false);
   const [newRootName, setNewRootName] = useState('');
   const [activeItem, setActiveItem] = useState<{ id: string; type: 'tag' | 'category'; data: Tag | Category } | null>(null);
+  const [overInfo, setOverInfo] = useState<{ id: string; side: 'left' | 'right' | 'top' | 'bottom' | 'child' } | null>(null);
+  const pointerRef = React.useRef({ x: 0, y: 0 });
+
+  React.useEffect(() => {
+    const handler = (e: PointerEvent) => { pointerRef.current = { x: e.clientX, y: e.clientY }; };
+    document.addEventListener('pointermove', handler, { passive: true });
+    return () => document.removeEventListener('pointermove', handler);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -356,8 +404,128 @@ export function CategoryTree({
     }
   };
 
+  const handleDragOver = (event: DragOverEvent) => {
+    if (!activeItem) { setOverInfo(null); return; }
+    const { over } = event;
+    if (!over) { setOverInfo(null); return; }
+
+    const overId = String(over.id);
+    if (!overId.startsWith('tag-') && !overId.startsWith('cat-')) {
+      setOverInfo(null);
+      return;
+    }
+
+    // Use elementFromPoint to get the element under cursor for left/right detection
+    const clientX = pointerRef.current.x;
+    const clientY = pointerRef.current.y;
+
+    if (activeItem.type === 'tag' && overId.startsWith('tag-') && overId !== activeItem.id) {
+      const tagId = Number(overId.replace('tag-', ''));
+      const tag = allCategories.flatMap((c) => c.tags ?? []).find((t) => t.id === tagId);
+      const card = document.querySelector(`[data-tag-card="${overId}"]`);
+      if (card) {
+        const rect = card.getBoundingClientRect();
+        const side: 'left' | 'right' = clientX < rect.left + rect.width / 2 ? 'left' : 'right';
+        setOverInfo({ id: overId, side });
+        return;
+      }
+    }
+
+    if (activeItem.type === 'tag' && overId.startsWith('cat-')) {
+      const el = document.elementFromPoint(clientX, clientY);
+      const bar = el?.closest('[data-cat-bar]');
+      if (bar) {
+        const rect = bar.getBoundingClientRect();
+        const relX = clientX - rect.left;
+        const relY = clientY - rect.top;
+        const w = rect.width;
+        const h = rect.height;
+        let side: 'left' | 'right';
+        if (relX < w / 2) side = 'left';
+        else side = 'right';
+        setOverInfo({ id: overId, side });
+        return;
+      }
+    }
+
+    if (activeItem.type === 'category' && overId.startsWith('cat-') && overId !== activeItem.id) {
+      const el = document.elementFromPoint(clientX, clientY);
+      const bar = el?.closest('[data-cat-bar]');
+      if (bar) {
+        const rect = bar.getBoundingClientRect();
+        const relY = clientY - rect.top;
+        const h = rect.height;
+        let side: 'top' | 'bottom' | 'child';
+        if (relY < h / 3) side = 'top';
+        else if (relY > (h * 2) / 3) side = 'bottom';
+        else side = 'child';
+        setOverInfo({ id: overId, side });
+        return;
+      }
+    }
+
+    setOverInfo(null);
+  };
+
   const handleDragEnd = () => {
+    if (activeItem && overInfo) {
+      const { id: targetId, side } = overInfo;
+      const draggedId = activeItem.id;
+
+      if (activeItem.type === 'tag') {
+        const tagId = Number(draggedId.replace('tag-', ''));
+        if (side === 'child' && targetId.startsWith('cat-drop-')) {
+          const targetCatId = Number(targetId.replace('cat-drop-', ''));
+          onMoveTag(tagId, targetCatId);
+        } else if (side === 'left' && targetId.startsWith('tag-')) {
+          const refTagId = Number(targetId.replace('tag-', ''));
+          const refTagCat = allCategories.find((c) => c.tags?.some((t) => t.id === refTagId));
+          if (refTagCat) {
+            const refTag = refTagCat.tags?.find((t) => t.id === refTagId);
+            if (refTag) {
+              onReorderTags([{ id: tagId, categoryId: refTagCat.id, sortOrder: refTag.sortOrder - 1 }]);
+            }
+          }
+        } else if (side === 'right' && targetId.startsWith('tag-')) {
+          const refTagId = Number(targetId.replace('tag-', ''));
+          const refTagCat = allCategories.find((c) => c.tags?.some((t) => t.id === refTagId));
+          if (refTagCat) {
+            const refTag = refTagCat.tags?.find((t) => t.id === refTagId);
+            if (refTag) {
+              onReorderTags([{ id: tagId, categoryId: refTagCat.id, sortOrder: refTag.sortOrder + 1 }]);
+            }
+          }
+        } else if (side === 'left' && targetId.startsWith('cat-')) {
+          const targetCatId = Number(targetId.replace('cat-', ''));
+          onReorderTags([{ id: tagId, categoryId: targetCatId, sortOrder: 0 }]);
+        } else if (side === 'right' && targetId.startsWith('cat-')) {
+          const targetCatId = Number(targetId.replace('cat-', ''));
+          const targetCat = allCategories.find((c) => c.id === targetCatId);
+          const sortOrder = (targetCat?.tags?.length ?? 0) + 1;
+          onReorderTags([{ id: tagId, categoryId: targetCatId, sortOrder }]);
+        }
+      } else if (activeItem.type === 'category') {
+        const draggedCatId = Number(draggedId.replace('cat-', ''));
+        if (side === 'child' && targetId.startsWith('cat-drop-')) {
+          const targetCatId = Number(targetId.replace('cat-drop-', ''));
+          onMoveCategory(draggedCatId, targetCatId);
+        } else if (side === 'top' && targetId.startsWith('cat-')) {
+          const refCatId = Number(targetId.replace('cat-', ''));
+          const refCat = allCategories.find((c) => c.id === refCatId);
+          if (refCat) {
+            onReorderCategories([{ id: draggedCatId, parentId: refCat.parentId, sortOrder: refCat.sortOrder - 1 }]);
+          }
+        } else if (side === 'bottom' && targetId.startsWith('cat-')) {
+          const refCatId = Number(targetId.replace('cat-', ''));
+          const refCat = allCategories.find((c) => c.id === refCatId);
+          if (refCat) {
+            onReorderCategories([{ id: draggedCatId, parentId: refCat.parentId, sortOrder: refCat.sortOrder + 1 }]);
+          }
+        }
+      }
+    }
     setActiveItem(null);
+    setOverInfo(null);
   };
 
   const handleRootSubmit = () => {
@@ -374,8 +542,10 @@ export function CategoryTree({
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
+      <div>
       {categories.map((cat) => (
         <SortableCategoryNode
           key={cat.id}
@@ -393,6 +563,7 @@ export function CategoryTree({
           onMoveTag={onMoveTag}
           onMoveCategory={onMoveCategory}
           activeItemId={activeItemId}
+          overInfo={overInfo}
         />
       ))}
 
@@ -441,6 +612,7 @@ export function CategoryTree({
           <span className="text-sm">点击上方按钮创建第一个分类</span>
         </div>
       )}
+    </div>
     </DndContext>
   );
 }
