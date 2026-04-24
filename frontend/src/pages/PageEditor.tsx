@@ -5,13 +5,9 @@ import { CategoryTree } from '../components/category/CategoryTree';
 import { QuickAddInput } from '../components/tag/QuickAddInput';
 import { ShareModal } from '../components/share/ShareModal';
 import { Button, Modal, Input } from '../components/ui';
-import { Share2, Settings, Globe, Menu } from 'lucide-react';
+import { Share2, Settings, Globe } from 'lucide-react';
 
-interface PageEditorProps {
-  onMenuClick?: () => void;
-}
-
-export function PageEditor({ onMenuClick }: PageEditorProps) {
+export function PageEditor() {
   const { currentPage, updatePage, createTag, updateTag, deleteTag, reorderTags, createCategory, updateCategory, deleteCategory, reorderCategories } = usePageStore();
   const { user } = useAuthStore();
   const [shareOpen, setShareOpen] = useState(false);
@@ -61,13 +57,6 @@ export function PageEditor({ onMenuClick }: PageEditorProps) {
         <div className="flex items-start justify-between mb-6 md:mb-8 gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <button
-                onClick={onMenuClick}
-                className="md:hidden p-1 -ml-1 rounded-lg hover:bg-bg-secondary transition-colors flex-shrink-0"
-                aria-label="打开页面列表"
-              >
-                <Menu size={20} />
-              </button>
               <button
                 onClick={() => { setEditName(currentPage.name); setEditNameOpen(true); }}
                 className="text-2xl md:text-3xl font-bold font-heading truncate hover:text-accent-primary transition-colors"

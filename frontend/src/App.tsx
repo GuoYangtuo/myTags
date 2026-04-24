@@ -8,12 +8,11 @@ import { BottomNav } from './components/layout/BottomNav';
 import { PageEditor } from './pages/PageEditor';
 import { ShareViewPage } from './pages/ShareViewPage';
 import { AuthModal } from './components/auth/AuthModal';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 function AppLayout() {
   const { user } = useAuthStore();
   const { currentPage, fetchPages, fetchPage, isPageLoaded, createPage, setCurrentPage } = usePageStore();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newPageName, setNewPageName] = useState('');
   const [showNewPage, setShowNewPage] = useState(false);
 
@@ -42,75 +41,18 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen bg-bg-primary">
-      <Header onMenuClick={() => setSidebarOpen(true)} />
+      <Header />
       <div className="flex">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
-          <Sidebar />
+          <Sidebar onAddPage={() => setShowNewPage(true)} />
         </div>
 
-        {/* Mobile sidebar drawer */}
-        {sidebarOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/40 z-40 md:hidden modal-backdrop"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="fixed left-0 top-0 bottom-0 w-72 bg-bg-primary z-50 md:hidden overflow-y-auto shadow-[4px_0_12px_rgba(0,0,0,0.15)]">
-              <div className="flex items-center justify-between p-4 border-b-2 border-border-strong">
-                <h2 className="font-bold font-heading text-sm uppercase tracking-wider text-text-secondary">我的页面</h2>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="p-4">
-                {showNewPage && (
-                  <div className="mb-3 p-3 bg-bg-card rounded-xl border-2 border-border-strong category-enter">
-                    <input
-                      type="text"
-                      value={newPageName}
-                      onChange={(e) => setNewPageName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleCreatePage();
-                        if (e.key === 'Escape') setShowNewPage(false);
-                      }}
-                      placeholder="页面名称..."
-                      className="w-full px-3 py-1.5 text-sm rounded-lg border border-border-strong outline-none focus:border-accent-primary"
-                      autoFocus
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={handleCreatePage}
-                        className="flex-1 px-3 py-1 text-sm bg-accent-primary text-white rounded-lg border border-border-strong hover:bg-orange-600 transition-colors"
-                      >
-                        创建
-                      </button>
-                      <button
-                        onClick={() => setShowNewPage(false)}
-                        className="flex-1 px-3 py-1 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors"
-                      >
-                        取消
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <Sidebar onAddPage={() => setShowNewPage(true)} />
-              </div>
-            </div>
-          </>
-        )}
-
-        <PageEditor onMenuClick={() => setSidebarOpen(true)} />
+        <PageEditor />
 
         {/* Mobile bottom navigation */}
         <BottomNav
-          onAddPage={() => {
-            setShowNewPage(true);
-            setSidebarOpen(true);
-          }}
+          onAddPage={() => setShowNewPage(true)}
         />
       </div>
     </div>
