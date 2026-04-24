@@ -3,9 +3,18 @@ import type { Category, Tag } from '../../types';
 import { TagCard } from '../tag/TagCard';
 import { ConfidenceSlider } from '../tag/ConfidenceSlider';
 import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus } from 'lucide-react';
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
+import {
+  DndContext,
+  DragOverlay,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
 
 interface CategoryTreeProps {
   categories: Category[];
@@ -22,11 +31,16 @@ interface CategoryTreeProps {
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
 }
 
-function SortableTagCard({ tag, onUpdate, onDelete }: { tag: Tag; onUpdate: (d: Partial<Tag>) => void; onDelete: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `tag-${tag.id}` });
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+function SortableTagCard({ tag, onUpdate, onDelete, activeItemId }: { tag: Tag; onUpdate: (d: Partial<Tag>) => void; onDelete: () => void; activeItemId: string | null }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: `tag-${tag.id}` });
+  const isThisDragging = activeItemId === `tag-${tag.id}`;
+  if (isThisDragging) {
+    return (
+      <div ref={setNodeRef} className="tag-card rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 h-[72px]" />
+    );
+  }
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} {...attributes} {...listeners}>
       <TagCard tag={tag} onUpdate={onUpdate} onDelete={onDelete} />
     </div>
   );
@@ -46,6 +60,7 @@ function SortableCategoryNode({
   onReorderCategories,
   onMoveTag,
   onMoveCategory,
+  activeItemId,
 }: {
   category: Category;
   depth: number;
@@ -60,6 +75,7 @@ function SortableCategoryNode({
   onReorderCategories: (items: { id: number; parentId: number | null; sortOrder: number }[]) => void;
   onMoveTag: (tagId: number, targetCategoryId: number) => void;
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
+  activeItemId: string | null;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -76,10 +92,9 @@ function SortableCategoryNode({
   const [dragOver, setDragOver] = useState(false);
 
   const { setNodeRef: setDropRef } = useDroppable({ id: `cat-drop-${category.id}` });
-  const { attributes, listeners, setNodeRef: setDragRef, transform, transition, isDragging } = useSortable({ id: `cat-${category.id}` });
+  const { attributes, listeners, setNodeRef: setDragRef, transform, transition } = useSortable({ id: `cat-${category.id}` });
 
   const dragStyle = { transform: CSS.Transform.toString(transform), transition };
-  const allTagIds = (category.tags ?? []).map((t) => `tag-${t.id}`);
 
   const handleChildSubmit = () => {
     if (!newChildName.trim()) return;
@@ -103,102 +118,106 @@ function SortableCategoryNode({
       ref={setDropRef}
       className={`${category.parentId === null ? '' : 'ml-2 sm:ml-4 pl-2 sm:pl-4 border-l-2 border-border-light'} mb-3`}
     >
-      <div
-        ref={setDragRef}
-        style={dragStyle}
-        className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/70 group transition-all duration-150 mb-2 ${
-          isDragging ? 'opacity-40' : ''
-        } ${dragOver ? 'ring-2 ring-accent-primary ring-offset-2 bg-accent-primary/5' : ''}`}
-      >
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="p-0.5 rounded hover:bg-bg-secondary transition-colors"
+      {activeItemId === `cat-${category.id}` ? (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 mb-2 h-[52px]" />
+      ) : (
+        <div
+          ref={setDragRef}
+          style={dragStyle}
+          className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/70 group transition-all duration-150 mb-2 ${
+            dragOver ? 'ring-2 ring-accent-primary ring-offset-2 bg-accent-primary/5' : ''
+          }`}
         >
-          {(category.children ?? []).length > 0 || (category.tags ?? []).length > 0 ? (
-            expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
-          ) : (
-            <span className="w-4 h-4 inline-block" />
-          )}
-        </button>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-0.5 rounded hover:bg-bg-secondary transition-colors"
+          >
+            {(category.children ?? []).length > 0 || (category.tags ?? []).length > 0 ? (
+              expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+            ) : (
+              <span className="w-4 h-4 inline-block" />
+            )}
+          </button>
 
-        {isEditing ? (
-          <div className="flex-1 flex flex-col gap-2 min-w-0">
-            <input
-              type="text"
-              value={editName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
-              className="px-2 py-1 text-sm font-bold rounded border border-accent-primary outline-none bg-white min-w-0"
-              autoFocus
+          {isEditing ? (
+            <div className="flex-1 flex flex-col gap-2 min-w-0">
+              <input
+                type="text"
+                value={editName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
+                className="px-2 py-1 text-sm font-bold rounded border border-accent-primary outline-none bg-white min-w-0"
+                autoFocus
+                {...attributes}
+                {...listeners}
+              />
+              <input
+                type="text"
+                value={editDescription}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditDescription(e.target.value)}
+                placeholder="描述..."
+                className="px-2 py-1 text-xs rounded border border-border-light outline-none focus:border-accent-primary bg-white min-w-0"
+              />
+              <div className="px-1">
+                <ConfidenceSlider value={editConfidence} onChange={setEditConfidence} label={editConfidenceLabel} size="sm" debounceMs={0} />
+              </div>
+              <input
+                type="text"
+                value={editConfidenceLabel}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditConfidenceLabel(e.target.value)}
+                placeholder="标签字（如：熟练度）"
+                className="px-2 py-1 text-xs rounded border border-border-light outline-none focus:border-accent-primary bg-white min-w-0"
+              />
+              <div className="flex gap-1">
+                <button
+                  onBlur={() => { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim(), description: editDescription, confidence: editConfidence, confidenceLabel: editConfidenceLabel }); setIsEditing(false); }}
+                  onClick={() => { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim(), description: editDescription, confidence: editConfidence, confidenceLabel: editConfidenceLabel }); setIsEditing(false); }}
+                  className="px-2 py-0.5 text-xs bg-accent-primary text-white rounded border border-border-strong hover:bg-orange-600 whitespace-nowrap"
+                >
+                  保存
+                </button>
+                <button
+                  onClick={() => { setEditName(category.name); setEditDescription(category.description); setEditConfidence(category.confidence); setEditConfidenceLabel(category.confidenceLabel); setIsEditing(false); }}
+                  className="px-2 py-0.5 text-xs bg-bg-secondary rounded border border-border-strong hover:bg-border-light whitespace-nowrap"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="flex-1 text-left font-bold font-heading text-sm md:text-base hover:text-accent-primary transition-colors cursor-grab active:cursor-grabbing truncate"
+              onDoubleClick={() => { setIsEditing(true); }}
+              title={category.description || category.name}
               {...attributes}
               {...listeners}
-            />
-            <input
-              type="text"
-              value={editDescription}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditDescription(e.target.value)}
-              placeholder="描述..."
-              className="px-2 py-1 text-xs rounded border border-border-light outline-none focus:border-accent-primary bg-white min-w-0"
-            />
-            <div className="px-1">
-              <ConfidenceSlider value={editConfidence} onChange={setEditConfidence} label={editConfidenceLabel} size="sm" debounceMs={0} />
-            </div>
-            <input
-              type="text"
-              value={editConfidenceLabel}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditConfidenceLabel(e.target.value)}
-              placeholder="标签字（如：熟练度）"
-              className="px-2 py-1 text-xs rounded border border-border-light outline-none focus:border-accent-primary bg-white min-w-0"
-            />
-            <div className="flex gap-1">
-              <button
-                onBlur={() => { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim(), description: editDescription, confidence: editConfidence, confidenceLabel: editConfidenceLabel }); setIsEditing(false); }}
-                onClick={() => { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim(), description: editDescription, confidence: editConfidence, confidenceLabel: editConfidenceLabel }); setIsEditing(false); }}
-                className="px-2 py-0.5 text-xs bg-accent-primary text-white rounded border border-border-strong hover:bg-orange-600 whitespace-nowrap"
-              >
-                保存
-              </button>
-              <button
-                onClick={() => { setEditName(category.name); setEditDescription(category.description); setEditConfidence(category.confidence); setEditConfidenceLabel(category.confidenceLabel); setIsEditing(false); }}
-                className="px-2 py-0.5 text-xs bg-bg-secondary rounded border border-border-strong hover:bg-border-light whitespace-nowrap"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            className="flex-1 text-left font-bold font-heading text-sm md:text-base hover:text-accent-primary transition-colors cursor-grab active:cursor-grabbing truncate"
-            onDoubleClick={() => { setIsEditing(true); }}
-            title={category.description || category.name}
-            {...attributes}
-            {...listeners}
-          >
-            {category.name}
-            <span className="ml-1 md:ml-2 text-xs font-normal text-text-secondary whitespace-nowrap">
-              ({(category.children ?? []).reduce((s, c) => s + (c.tags ?? []).length, 0)} 项)
-            </span>
-          </button>
-        )}
+            >
+              {category.name}
+              <span className="ml-1 md:ml-2 text-xs font-normal text-text-secondary whitespace-nowrap">
+                ({(category.children ?? []).reduce((s, c) => s + (c.tags ?? []).length, 0)} 项)
+              </span>
+            </button>
+          )}
 
-        {/* Mobile: always show action buttons, Desktop: show on hover */}
-        <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-          <button onClick={() => setShowAddChild(true)} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors" title="添加子分类">
-            <FolderPlus size={14} className="text-accent-secondary" />
-          </button>
-          <button onClick={() => { setShowAddTag(true); }} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors" title="在此分类下添加标签">
-            <Plus size={14} className="text-accent-primary" />
-          </button>
-          <button onClick={() => setIsEditing(true)} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors">
-            <Edit2 size={14} className="text-text-secondary" />
-          </button>
-          <button
-            onClick={() => { if (confirm(`确定删除分类 "${category.name}" 吗？`)) onDeleteCategory(category.id); }}
-            className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
-          >
-            <Trash2 size={14} />
-          </button>
+          {/* Mobile: always show action buttons, Desktop: show on hover */}
+          <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+            <button onClick={() => setShowAddChild(true)} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors" title="添加子分类">
+              <FolderPlus size={14} className="text-accent-secondary" />
+            </button>
+            <button onClick={() => { setShowAddTag(true); }} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors" title="在此分类下添加标签">
+              <Plus size={14} className="text-accent-primary" />
+            </button>
+            <button onClick={() => setIsEditing(true)} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors">
+              <Edit2 size={14} className="text-text-secondary" />
+            </button>
+            <button
+              onClick={() => { if (confirm(`确定删除分类 "${category.name}" 吗？`)) onDeleteCategory(category.id); }}
+              className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {showAddChild && (
         <div className="ml-4 sm:ml-6 mb-2 flex gap-2 flex-wrap sm:flex-nowrap category-enter">
@@ -249,18 +268,17 @@ function SortableCategoryNode({
 
       {expanded && (
         <div className={`ml-2 ${dragOver ? 'ring-1 ring-accent-primary ring-dashed rounded-lg p-2' : ''}`}>
-          <SortableContext items={allTagIds} strategy={verticalListSortingStrategy}>
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {(category.tags ?? []).map((tag) => (
-                <SortableTagCard
-                  key={tag.id}
-                  tag={tag}
-                  onUpdate={(data) => onUpdateTag(tag.id, data)}
-                  onDelete={() => onDeleteTag(tag.id)}
-                />
-              ))}
-            </div>
-          </SortableContext>
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {(category.tags ?? []).map((tag) => (
+              <SortableTagCard
+                key={tag.id}
+                tag={tag}
+                onUpdate={(data) => onUpdateTag(tag.id, data)}
+                onDelete={() => onDeleteTag(tag.id)}
+                activeItemId={activeItemId}
+              />
+            ))}
+          </div>
 
           {(category.tags ?? []).length === 0 && (category.children ?? []).length === 0 && !showAddTag && (
             <button
@@ -291,6 +309,7 @@ function SortableCategoryNode({
               onReorderCategories={onReorderCategories}
               onMoveTag={onMoveTag}
               onMoveCategory={onMoveCategory}
+              activeItemId={activeItemId}
             />
           ))}
         </div>
@@ -315,6 +334,31 @@ export function CategoryTree({
 }: CategoryTreeProps) {
   const [showAddRoot, setShowAddRoot] = useState(false);
   const [newRootName, setNewRootName] = useState('');
+  const [activeItem, setActiveItem] = useState<{ id: string; type: 'tag' | 'category'; data: Tag | Category } | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const id = String(active.id);
+    if (id.startsWith('tag-')) {
+      const tagId = Number(id.replace('tag-', ''));
+      for (const cat of allCategories) {
+        const tag = cat.tags?.find((t) => t.id === tagId);
+        if (tag) { setActiveItem({ id, type: 'tag', data: tag }); return; }
+      }
+    } else if (id.startsWith('cat-')) {
+      const catId = Number(id.replace('cat-', ''));
+      const cat = allCategories.find((c) => c.id === catId);
+      if (cat) setActiveItem({ id, type: 'category', data: cat });
+    }
+  };
+
+  const handleDragEnd = () => {
+    setActiveItem(null);
+  };
 
   const handleRootSubmit = () => {
     if (!newRootName.trim()) return;
@@ -323,28 +367,46 @@ export function CategoryTree({
     setShowAddRoot(false);
   };
 
+  const isDragging = activeItem !== null;
+  const activeItemId = activeItem?.id ?? null;
+
   return (
-    <div>
-      <SortableContext items={[]} strategy={verticalListSortingStrategy}>
-        {categories.map((cat) => (
-          <SortableCategoryNode
-            key={cat.id}
-            category={cat}
-            depth={0}
-            allCategories={allCategories}
-            onUpdateTag={onUpdateTag}
-            onDeleteTag={onDeleteTag}
-            onAddTag={onAddTag}
-            onUpdateCategory={onUpdateCategory}
-            onDeleteCategory={onDeleteCategory}
-            onCreateCategory={onCreateCategory}
-            onReorderTags={onReorderTags}
-            onReorderCategories={onReorderCategories}
-            onMoveTag={onMoveTag}
-            onMoveCategory={onMoveCategory}
-          />
-        ))}
-      </SortableContext>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      {categories.map((cat) => (
+        <SortableCategoryNode
+          key={cat.id}
+          category={cat}
+          depth={0}
+          allCategories={allCategories}
+          onUpdateTag={onUpdateTag}
+          onDeleteTag={onDeleteTag}
+          onAddTag={onAddTag}
+          onUpdateCategory={onUpdateCategory}
+          onDeleteCategory={onDeleteCategory}
+          onCreateCategory={onCreateCategory}
+          onReorderTags={onReorderTags}
+          onReorderCategories={onReorderCategories}
+          onMoveTag={onMoveTag}
+          onMoveCategory={onMoveCategory}
+          activeItemId={activeItemId}
+        />
+      ))}
+
+      <DragOverlay dropAnimation={null}>
+        {activeItem?.type === 'tag' ? (
+          <div className="opacity-90 shadow-2xl scale-105 rotate-1 cursor-grabbing">
+            <TagCard tag={activeItem.data as Tag} onUpdate={() => {}} onDelete={() => {}} />
+          </div>
+        ) : activeItem?.type === 'category' ? (
+          <div className="opacity-90 shadow-2xl scale-105 rotate-1 cursor-grabbing flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/90 font-bold font-heading text-sm">
+            {(activeItem.data as Category).name}
+          </div>
+        ) : null}
+      </DragOverlay>
 
       {showAddRoot ? (
         <div className="flex gap-2 mt-2 ml-2 flex-wrap sm:flex-nowrap category-enter">
@@ -379,6 +441,6 @@ export function CategoryTree({
           <span className="text-sm">点击上方按钮创建第一个分类</span>
         </div>
       )}
-    </div>
+    </DndContext>
   );
 }
