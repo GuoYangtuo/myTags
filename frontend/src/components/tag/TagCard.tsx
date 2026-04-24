@@ -63,7 +63,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
             autoFocus
           />
         ) : (
-          <TagDescriptionTooltip tagName={tag.name} description={tag.description}>
+          <TagDescriptionTooltip tagName={tag.name} description={tag.description} editable onSave={(desc) => onUpdate({ description: desc })}>
             <button
               onClick={() => setIsEditing(true)}
               className="flex-1 text-left font-bold font-heading text-base hover:text-accent-primary transition-colors cursor-help"
