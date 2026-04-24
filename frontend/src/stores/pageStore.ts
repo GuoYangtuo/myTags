@@ -140,7 +140,7 @@ export const usePageStore = create<PageState>((set, get) => ({
     await categoryApi.reorder(items);
   },
 
-  createTag: async (pageId, categoryId, name, confidence = 50, description, confidenceLabel) => {
+  createTag: async (pageId, categoryId, name, confidence = 50, description?, confidenceLabel) => {
     const tag = await tagApi.create({ pageId, categoryId, name, confidence, description, confidenceLabel });
     get().addTagToPage(tag);
     return tag;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Tag } from '../../types';
 import { ConfidenceSlider } from './ConfidenceSlider';
 import { TagDescriptionTooltip } from './TagDescriptionTooltip';
-import { getConfidenceColor } from '../../utils/helpers';
+import { getConfidenceColor, isNoConfidence } from '../../utils/helpers';
 import { Edit2, Trash2, Link2, ExternalLink, X } from 'lucide-react';
 
 interface TagCardProps {
@@ -75,9 +75,13 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-2 w-full">
-        <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} label={tag.confidenceLabel} />
-      </div>
+      {isNoConfidence(tag.confidence) ? (
+        <p className="text-xs text-text-secondary/50 italic">不使用置信度</p>
+      ) : (
+        <div className="flex items-center gap-2 w-full">
+          <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} label={tag.confidenceLabel} />
+        </div>
+      )}
 
       <div className="flex items-center justify-end gap-1 mt-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
         <button

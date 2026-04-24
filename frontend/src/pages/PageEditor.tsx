@@ -43,8 +43,8 @@ export function PageEditor() {
     );
   }
 
-  const handleAddTag = (name: string, categoryId: number, description?: string, confidence?: number, confidenceLabel?: string) => {
-    createTag(currentPage.id, categoryId, name, confidence, description, confidenceLabel);
+  const handleAddTag = (name: string, categoryId: number, confidence?: number, confidenceLabel?: string) => {
+    createTag(currentPage.id, categoryId, name, confidence, undefined, confidenceLabel);
   };
 
   const handleMoveTag = (tagId: number, targetCategoryId: number) => {

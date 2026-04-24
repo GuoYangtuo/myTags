@@ -1,3 +1,9 @@
+export const NO_CONFIDENCE_VALUE = 121;
+
+export function isNoConfidence(value: number): boolean {
+  return value === NO_CONFIDENCE_VALUE;
+}
+
 export function getConfidenceColor(value: number): string {
   if (value >= 80) return '#22C55E';
   if (value >= 40) return '#EAB308';

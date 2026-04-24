@@ -12,7 +12,7 @@ const createTagSchema = z.object({
   categoryId: z.number(),
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
-  confidence: z.number().min(-20).max(120).optional(),
+  confidence: z.number().min(-20).max(121).optional(),
   confidenceLabel: z.string().max(50).optional(),
   navUrl: z.string().max(500).nullable().optional(),
 });

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, ChevronDown } from 'lucide-react';
 import { ConfidenceSlider } from './ConfidenceSlider';
+import { NO_CONFIDENCE_VALUE } from '../../utils/helpers';
 import type { Category } from '../../types';
 
 const CONFIDENCE_LABEL_PRESETS = [
@@ -17,7 +18,7 @@ const CONFIDENCE_LABEL_PRESETS = [
 interface QuickAddInputProps {
   categories: Category[];
   pageId: number;
-  onAdd: (name: string, categoryId: number, description?: string, confidence?: number, confidenceLabel?: string) => void;
+  onAdd: (name: string, categoryId: number, confidence?: number, confidenceLabel?: string) => void;
   currentCategoryId?: number;
 }
 
@@ -27,7 +28,7 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
   const [value, setValue] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<number | null>(currentCategoryId || null);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [description, setDescription] = useState('');
+  const [useConfidence, setUseConfidence] = useState(true);
   const [confidence, setConfidence] = useState(50);
   const [confidenceLabel, setConfidenceLabel] = useState('置信度');
   const [showLabelDropdown, setShowLabelDropdown] = useState(false);
@@ -61,9 +62,10 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
 
   const handleSubmit = () => {
     if (!value.trim() || !selectedCatId) return;
-    onAdd(value.trim(), selectedCatId, description || undefined, confidence, confidenceLabel);
+    const finalConfidence = useConfidence ? confidence : NO_CONFIDENCE_VALUE;
+    onAdd(value.trim(), selectedCatId, finalConfidence, confidenceLabel);
     setValue('');
-    setDescription('');
+    setUseConfidence(true);
     setConfidence(50);
     setConfidenceLabel('置信度');
     setCustomLabel('');
@@ -132,63 +134,67 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
         </button>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <input
-          type="text"
-          value={description}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)}
-          placeholder="描述（可选）：解释一下这个标签的含义..."
-          className="w-full px-3 py-1.5 rounded-lg border-2 border-border-light outline-none focus:border-accent-primary text-sm text-text-secondary bg-bg-secondary/50"
-        />
-
-        <div className="flex items-center gap-2 px-1">
-          <div className="relative" ref={labelDropdownRef}>
-            <button
-              onClick={() => setShowLabelDropdown(!showLabelDropdown)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border-light hover:border-accent-secondary transition-colors text-xs text-text-secondary whitespace-nowrap"
-            >
-              <span>{activeLabel}</span>
-              <ChevronDown size={10} className={`transition-transform ${showLabelDropdown ? 'rotate-180' : ''}`} />
-            </button>
-            {showLabelDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[3px_3px_0_var(--color-border-strong)] z-20 py-1 min-w-[120px] category-enter">
-                {CONFIDENCE_LABEL_PRESETS.map((preset) => (
-                  <button
-                    key={preset}
-                    onClick={() => handleLabelSelect(preset)}
-                    className={`w-full text-left px-3 py-1.5 text-xs hover:bg-bg-secondary transition-colors ${activeLabel === preset ? 'bg-accent-primary/10 text-accent-primary font-medium' : ''}`}
-                  >
-                    {preset}
-                  </button>
-                ))}
-                <div className="border-t border-border-light mt-1 pt-1 px-3 py-1.5">
-                  <input
-                    type="text"
-                    value={customLabel}
-                    onChange={(e) => {
-                      setCustomLabel(e.target.value);
-                      if (e.target.value) setConfidenceLabel(e.target.value);
-                    }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleLabelSelect('自定义'); } }}
-                    placeholder="自定义..."
-                    className="w-full px-2 py-0.5 text-xs rounded border border-border-light outline-none focus:border-accent-primary bg-white"
-                    autoFocus
-                  />
+      <div className="flex items-center gap-2 px-1">
+        <label className="flex items-center gap-1.5 cursor-pointer select-none flex-shrink-0">
+          <input
+            type="checkbox"
+            checked={useConfidence}
+            onChange={(e) => setUseConfidence(e.target.checked)}
+            className="w-3.5 h-3.5 rounded accent-orange-500 cursor-pointer"
+          />
+          {useConfidence ? (
+            <div className="relative" ref={labelDropdownRef}>
+              <button
+                onClick={() => setShowLabelDropdown(!showLabelDropdown)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-border-light hover:border-accent-secondary transition-colors text-xs text-text-secondary whitespace-nowrap"
+              >
+                <span>{activeLabel}</span>
+                <ChevronDown size={10} className={`transition-transform ${showLabelDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              {showLabelDropdown && (
+                <div className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[3px_3px_0_var(--color-border-strong)] z-20 py-1 min-w-[120px] category-enter">
+                  {CONFIDENCE_LABEL_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => handleLabelSelect(preset)}
+                      className={`w-full text-left px-3 py-1.5 text-xs hover:bg-bg-secondary transition-colors ${activeLabel === preset ? 'bg-accent-primary/10 text-accent-primary font-medium' : ''}`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                  <div className="border-t border-border-light mt-1 pt-1 px-3 py-1.5">
+                    <input
+                      type="text"
+                      value={customLabel}
+                      onChange={(e) => {
+                        setCustomLabel(e.target.value);
+                        if (e.target.value) setConfidenceLabel(e.target.value);
+                      }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleLabelSelect('自定义'); } }}
+                      placeholder="自定义..."
+                      className="w-full px-2 py-0.5 text-xs rounded border border-border-light outline-none focus:border-accent-primary bg-white"
+                      autoFocus
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <span className="text-xs text-text-secondary/60 italic">不使用置信度</span>
+          )}
+        </label>
 
+        {useConfidence && (
           <div className="flex-1">
             <ConfidenceSlider
               value={confidence}
               onChange={setConfidence}
-              label={activeLabel}
+              label=""
               size="sm"
               debounceMs={0}
             />
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

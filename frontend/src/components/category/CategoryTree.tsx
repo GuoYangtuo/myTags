@@ -12,7 +12,7 @@ interface CategoryTreeProps {
   allCategories: Category[];
   onUpdateTag: (tagId: number, data: Partial<Tag>) => void;
   onDeleteTag: (tagId: number) => void;
-  onAddTag: (name: string, categoryId: number, description?: string, confidence?: number, confidenceLabel?: string) => void;
+  onAddTag: (name: string, categoryId: number, confidence?: number, confidenceLabel?: string) => void;
   onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => void;
   onDeleteCategory: (id: number) => void;
   onCreateCategory: (name: string, parentId?: number | null) => void;
@@ -52,7 +52,7 @@ function SortableCategoryNode({
   allCategories: Category[];
   onUpdateTag: (tagId: number, data: Partial<Tag>) => void;
   onDeleteTag: (tagId: number) => void;
-  onAddTag: (name: string, categoryId: number, description?: string, confidence?: number, confidenceLabel?: string) => void;
+  onAddTag: (name: string, categoryId: number, confidence?: number, confidenceLabel?: string) => void;
   onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => void;
   onDeleteCategory: (id: number) => void;
   onCreateCategory: (name: string, parentId?: number | null) => void;
@@ -71,7 +71,6 @@ function SortableCategoryNode({
   const [showAddTag, setShowAddTag] = useState(false);
   const [newChildName, setNewChildName] = useState('');
   const [newTagName, setNewTagName] = useState('');
-  const [newTagDescription, setNewTagDescription] = useState('');
   const [newTagConfidence, setNewTagConfidence] = useState(50);
   const [newTagConfidenceLabel, setNewTagConfidenceLabel] = useState('置信度');
   const [dragOver, setDragOver] = useState(false);
@@ -92,9 +91,8 @@ function SortableCategoryNode({
 
   const handleTagSubmit = () => {
     if (!newTagName.trim()) return;
-    onAddTag(newTagName.trim(), category.id, newTagDescription, newTagConfidence, newTagConfidenceLabel);
+    onAddTag(newTagName.trim(), category.id, newTagConfidence, newTagConfidenceLabel);
     setNewTagName('');
-    setNewTagDescription('');
     setNewTagConfidence(50);
     setNewTagConfidenceLabel('置信度');
     setShowAddTag(false);
@@ -228,14 +226,6 @@ function SortableCategoryNode({
             placeholder="标签名称..."
             className="w-full px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary"
             autoFocus
-          />
-          <input
-            type="text"
-            value={newTagDescription}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTagDescription(e.target.value)}
-            onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleTagSubmit(); if (e.key === 'Escape') setShowAddTag(false); }}
-            placeholder="描述（可选）..."
-            className="w-full px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary"
           />
           <div className="px-1">
             <ConfidenceSlider value={newTagConfidence} onChange={setNewTagConfidence} label={newTagConfidenceLabel} size="sm" debounceMs={0} />

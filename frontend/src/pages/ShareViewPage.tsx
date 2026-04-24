@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { publicApi } from '../api/public';
 import type { ShareData, Category } from '../types';
 import { ChevronDown, ChevronRight, ExternalLink, Clock, User } from 'lucide-react';
-import { formatDate, getConfidenceColor } from '../utils/helpers';
+import { formatDate, getConfidenceColor, isNoConfidence } from '../utils/helpers';
 import { TagDescriptionTooltip } from '../components/tag/TagDescriptionTooltip';
 
 function PublicCategory({ category, depth = 0 }: { category: Category; depth?: number }) {
@@ -57,20 +57,26 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <div className="h-2 bg-border-light rounded-full border border-border-strong overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.max(0, Math.min(100, ((tag.confidence + 20) / 140) * 100))}%`,
-                          backgroundColor: getConfidenceColor(tag.confidence),
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <span className="font-mono font-bold text-sm" style={{ color: getConfidenceColor(tag.confidence) }}>
-                    {tag.confidence}%
-                  </span>
+                  {isNoConfidence(tag.confidence) ? (
+                    <p className="text-xs text-text-secondary/50 italic w-full py-1">不使用置信度</p>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <div className="h-2 bg-border-light rounded-full border border-border-strong overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${Math.max(0, Math.min(100, ((tag.confidence + 20) / 140) * 100))}%`,
+                              backgroundColor: getConfidenceColor(tag.confidence),
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <span className="font-mono font-bold text-sm" style={{ color: getConfidenceColor(tag.confidence) }}>
+                        {tag.confidence}%
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
