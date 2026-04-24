@@ -1,0 +1,105 @@
+name: Production Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 安装前端依赖
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      # 安装后端依赖（包含 devDependencies，因为需要 prisma CLI 和 tsx）
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      # 构建前端
+      - name: Build frontend
+        working-directory: ./frontend
+        env:
+          CI: false
+          VITE_API_BASE_URL: /api
+        run: npm run build
+
+      # 构建后端
+      - name: Build backend
+        working-directory: ./backend
+        run: npm run build
+
+      # 生成 Prisma Client（构建产物里需要）
+      - name: Generate Prisma Client
+        working-directory: ./backend
+        run: npx prisma generate
+
+      # 传输前端文件到服务器
+      - name: Deploy frontend to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_SSH_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "./frontend/dist/*"
+          target: "/var/www/mytags"
+          strip_components: 2
+          overwrite: true
+
+      # 传输后端文件到服务器
+      - name: Deploy backend to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_SSH_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "./backend/*"
+          target: "/root/mytags-backend"
+          strip_components: 1
+          overwrite: true
+
+      # 服务器端部署操作
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v0.1.2
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_SSH_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "========== 部署 myTags =========="
+
+            BACKEND_DIR="/root/mytags-backend"
+            BACKEND_ENV="$BACKEND_DIR/.env"
+
+            if [ ! -f "$BACKEND_ENV" ]; then
+              echo "错误: $BACKEND_ENV 不存在，请先在服务器创建 .env 文件"
+              exit 1
+            fi
+
+            cd "$BACKEND_DIR"
+
+            echo "安装生产依赖..."
+            npm install --production
+
+            echo "重启后端服务..."
+            pm2 restart mytags_backend || pm2 start dist/index.js --name mytags_backend
+            pm2 save
+
+            echo "========== 部署完成 =========="

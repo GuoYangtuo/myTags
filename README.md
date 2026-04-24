@@ -15,7 +15,7 @@
 
 ## 技术栈
 
-- **前端**: React 18 + TypeScript + Vite + Tailwind CSS v4 + Zustand + @dnd-kit
+- **前端**: React 18 + TypeScript + Vite 5 + Tailwind CSS v3 + Zustand + @dnd-kit
 - **后端**: Node.js + Express + TypeScript + Prisma ORM
 - **数据库**: MySQL 8.0
 
@@ -64,17 +64,109 @@ myTags/
 ├── frontend/          # 前端 (React + TypeScript)
 │   └── src/
 │       ├── api/       # API 调用层
-│       ├── components/# UI 组件
-│       ├── pages/     # 页面组件
-│       ├── stores/    # Zustand 状态管理
-│       └── types/     # TypeScript 类型
+│       ├── components/ # UI 组件
+│       ├── pages/      # 页面组件
+│       ├── stores/     # Zustand 状态管理
+│       └── types/      # TypeScript 类型
 ├── backend/           # 后端 (Node.js + Express)
 │   └── src/
 │       ├── routes/    # API 路由
 │       ├── middleware/ # 中间件
 │       └── utils/     # 工具函数
-└── prisma/
-    └── schema.prisma  # 数据库模型
+├── deploy/            # 部署相关文件
+│   ├── server-setup.sh # 服务器初始化脚本
+│   └── nginx.conf      # Nginx 配置
+├── .github/workflows/  # GitHub Actions 自动部署
+├── SPEC.md             # 设计规范文档
+└── README.md
+```
+
+## 部署到阿里云
+
+### 前置条件
+
+- 阿里云服务器（已安装 Node.js、MySQL、PM2、Nginx）
+- GitHub 账号（用于配置 Actions Secrets）
+
+### 1. 服务器端初始化（首次）
+
+SSH 登录服务器后执行：
+
+```bash
+# 创建数据库
+mysql -u root -p -e "CREATE DATABASE mytags CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 拉取项目（仅首次，之后由 CI 自动部署）
+git clone https://github.com/你的用户名/myTags.git /root/mytags
+
+# 初始化目录
+mkdir -p /var/www/mytags
+mkdir -p /root/mytags-backend
+
+# 配置后端 .env
+cat > /root/mytags-backend/.env << 'EOF'
+DATABASE_URL="mysql://用户名:密码@localhost:3306/mytags"
+JWT_SECRET="你的随机密钥（至少32字符）"
+PORT=3001
+EOF
+
+# 安装后端依赖
+cd /root/mytags-backend
+npm install
+npx prisma generate
+npx prisma db push   # 创建数据库表
+
+# 配置 PM2
+pm2 start dist/index.js --name mytags_backend
+pm2 save
+
+# 配置 Nginx（参考 deploy/nginx.conf）
+```
+
+### 2. 配置 GitHub Secrets
+
+在 GitHub 仓库 Settings → Secrets and variables → Actions 中添加：
+
+| Secret 名称 | 说明 |
+|---|---|
+| `SERVER_IP` | 阿里云服务器 IP |
+| `SERVER_SSH_USER` | SSH 用户名（如 `root`） |
+| `SERVER_SSH_KEY` | SSH 私钥（使用部署密钥的私钥） |
+| `SERVER_WEB_ROOT` | 前端目录（如 `/var/www/mytags`） |
+| `SERVER_BACKEND_DIR` | 后端目录（如 `/root/mytags-backend`） |
+
+### 3. 配置 GitHub Actions 部署密钥
+
+1. 在服务器上生成部署密钥对：
+   ```bash
+   ssh-keygen -t ed25519 -f /root/.ssh/deploy_key -N ""
+   ```
+2. 将公钥添加到 `~/.ssh/authorized_keys`
+3. 将私钥内容粘贴到 GitHub Secret `SERVER_SSH_KEY`
+
+### 4. 推送代码触发部署
+
+```bash
+git add .
+git commit -m "feat: initial deployment setup"
+git push origin main
+```
+
+推送后，GitHub Actions 会自动：
+1. 构建前端（生产环境）
+2. 通过 SCP 将前端 dist 文件上传到服务器
+3. 通过 SSH 重启后端 PM2 服务
+
+### 手动部署（不通过 GitHub Actions）
+
+如果暂时不用 CI，可以手动上传文件后 SSH 执行：
+
+```bash
+# 服务器上
+cd /root/mytags-backend
+npm install --production
+npx prisma generate
+pm2 restart mytags_backend
 ```
 
 ## API 文档
