@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { usePageStore } from '../stores/pageStore';
 import { useAuthStore } from '../stores/authStore';
 import { CategoryTree } from '../components/category/CategoryTree';
 import { QuickAddInput } from '../components/tag/QuickAddInput';
 import { ShareModal } from '../components/share/ShareModal';
 import { Button, Modal, Input } from '../components/ui';
-import { Share2, Settings, ChevronRight, Globe } from 'lucide-react';
+import { Share2, Settings, Globe } from 'lucide-react';
 
 export function PageEditor() {
   const { currentPage, updatePage, createTag, updateTag, deleteTag, reorderTags, createCategory, updateCategory, deleteCategory, reorderCategories } = usePageStore();
@@ -15,6 +15,20 @@ export function PageEditor() {
   const [editDesc, setEditDesc] = useState('');
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [editName, setEditName] = useState('');
+
+  const allCategories = useMemo(() => {
+    const flat: any[] = [];
+    if (currentPage?.categories) {
+      const flatten = (cats: any[]) => {
+        for (const cat of cats) {
+          flat.push(cat);
+          if (cat.children) flatten(cat.children);
+        }
+      };
+      flatten(currentPage.categories);
+    }
+    return flat;
+  }, [currentPage?.categories]);
 
   if (!currentPage) {
     return (
@@ -35,21 +49,6 @@ export function PageEditor() {
   const handleMoveTag = (tagId: number, targetCategoryId: number) => {
     updateTag(tagId, { categoryId: targetCategoryId });
   };
-
-  const getAllCategories = (): any[] => {
-    const flat: any[] = [];
-    const flatten = (cats: any[] | undefined) => {
-      if (!cats) return;
-      for (const cat of cats) {
-        flat.push(cat);
-        flatten(cat.children);
-      }
-    };
-    flatten(currentPage.categories);
-    return flat;
-  };
-
-  console.log(currentPage);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -92,7 +91,7 @@ export function PageEditor() {
 
         <CategoryTree
           categories={currentPage.categories ?? []}
-          allCategories={getAllCategories()}
+          allCategories={allCategories}
           onUpdateTag={(tagId, data) => updateTag(tagId, data)}
           onDeleteTag={(tagId) => deleteTag(tagId)}
           onAddTag={handleAddTag}

@@ -10,7 +10,7 @@ import { AuthModal } from './components/auth/AuthModal';
 
 function AppLayout() {
   const { user } = useAuthStore();
-  const { currentPage, fetchPages, fetchPage } = usePageStore();
+  const { currentPage, fetchPages, fetchPage, isPageLoaded } = usePageStore();
 
   useEffect(() => {
     if (user) {
@@ -19,10 +19,13 @@ function AppLayout() {
   }, [user]);
 
   useEffect(() => {
-    if (currentPage) {
+    if (!user || !currentPage) return;
+
+    if (!isPageLoaded(currentPage.id)) {
       fetchPage(currentPage.id);
     }
-  }, [currentPage?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage?.id, user]);
 
   return (
     <div className="min-h-screen bg-bg-primary">

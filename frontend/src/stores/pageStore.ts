@@ -7,6 +7,7 @@ import { tagApi } from '../api/tags';
 interface PageState {
   pages: Page[];
   currentPage: Page | null;
+  loadedPages: Record<number, Page>;
   loading: boolean;
   fetchPages: () => Promise<void>;
   fetchPage: (id: number) => Promise<void>;
@@ -25,11 +26,13 @@ interface PageState {
   updateTagInPage: (tag: Tag) => void;
   removeTagFromPage: (tagId: number) => void;
   setCurrentPage: (page: Page | null) => void;
+  isPageLoaded: (id: number) => boolean;
 }
 
 export const usePageStore = create<PageState>((set, get) => ({
   pages: [],
   currentPage: null,
+  loadedPages: {},
   loading: false,
 
   fetchPages: async () => {
@@ -46,7 +49,11 @@ export const usePageStore = create<PageState>((set, get) => ({
     set({ loading: true });
     try {
       const page = await pageApi.get(id);
-      set({ currentPage: page, loading: false });
+      set((state) => ({
+        currentPage: page,
+        loadedPages: { ...state.loadedPages, [id]: page },
+        loading: false,
+      }));
     } catch {
       set({ loading: false });
     }
@@ -63,15 +70,22 @@ export const usePageStore = create<PageState>((set, get) => ({
     set((state) => ({
       pages: state.pages.map((p) => (p.id === id ? { ...p, ...page } : p)),
       currentPage: state.currentPage?.id === id ? { ...state.currentPage, ...page } : state.currentPage,
+      loadedPages: state.currentPage?.id === id
+        ? { ...state.loadedPages, [id]: { ...state.loadedPages[id], ...page } }
+        : state.loadedPages,
     }));
   },
 
   deletePage: async (id) => {
     await pageApi.delete(id);
-    set((state) => ({
-      pages: state.pages.filter((p) => p.id !== id),
-      currentPage: state.currentPage?.id === id ? null : state.currentPage,
-    }));
+    set((state) => {
+      const { [id]: _removed, ...rest } = state.loadedPages;
+      return {
+        pages: state.pages.filter((p) => p.id !== id),
+        currentPage: state.currentPage?.id === id ? null : state.currentPage,
+        loadedPages: rest,
+      };
+    });
   },
 
   createCategory: async (pageId, name, parentId) => {
@@ -87,11 +101,10 @@ export const usePageStore = create<PageState>((set, get) => ({
           return { ...c, children: addToTree(c.children ?? []) };
         });
       };
-      if (category.parentId === null) {
-        set({ currentPage: { ...state.currentPage, categories: [...cats, { ...category, children: [], tags: [] }] } });
-      } else {
-        set({ currentPage: { ...state.currentPage, categories: addToTree(cats) } });
-      }
+      const newPage = category.parentId === null
+        ? { ...state.currentPage, categories: [...cats, { ...category, children: [], tags: [] }] }
+        : { ...state.currentPage, categories: addToTree(cats) };
+      set({ currentPage: newPage, loadedPages: { ...state.loadedPages, [pageId]: newPage } });
     }
     return category;
   },
@@ -104,7 +117,8 @@ export const usePageStore = create<PageState>((set, get) => ({
       const updateInTree = (cats: Category[]): Category[] => {
         return cats.map((c) => (c.id === id ? { ...c, ...cat } : { ...c, children: updateInTree(c.children ?? []) }));
       };
-      return { currentPage: { ...state.currentPage, categories: updateInTree(cats) } };
+      const newPage = { ...state.currentPage, categories: updateInTree(cats) };
+      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
     });
   },
 
@@ -117,7 +131,8 @@ export const usePageStore = create<PageState>((set, get) => ({
         cats
           .filter((c) => c.id !== id)
           .map((c) => ({ ...c, children: removeFromTree(c.children ?? []) }));
-      return { currentPage: { ...state.currentPage, categories: removeFromTree(cats) } };
+      const newPage = { ...state.currentPage, categories: removeFromTree(cats) };
+      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
     });
   },
 
@@ -154,7 +169,8 @@ export const usePageStore = create<PageState>((set, get) => ({
           if (c.id === tag.categoryId) return { ...c, tags: [...(c.tags ?? []), tag] };
           return { ...c, children: addToTree(c.children ?? []) };
         });
-      return { currentPage: { ...state.currentPage, categories: addToTree(cats) } };
+      const newPage = { ...state.currentPage, categories: addToTree(cats) };
+      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
     });
   },
 
@@ -168,7 +184,8 @@ export const usePageStore = create<PageState>((set, get) => ({
           tags: (c.tags ?? []).map((t) => (t.id === tag.id ? { ...t, ...tag } : t)),
           children: updateInTree(c.children ?? []),
         }));
-      return { currentPage: { ...state.currentPage, categories: updateInTree(cats) } };
+      const newPage = { ...state.currentPage, categories: updateInTree(cats) };
+      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
     });
   },
 
@@ -182,9 +199,22 @@ export const usePageStore = create<PageState>((set, get) => ({
           tags: (c.tags ?? []).filter((t) => t.id !== tagId),
           children: removeFromTree(c.children ?? []),
         }));
-      return { currentPage: { ...state.currentPage, categories: removeFromTree(cats) } };
+      const newPage = { ...state.currentPage, categories: removeFromTree(cats) };
+      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
     });
   },
 
-  setCurrentPage: (page) => set({ currentPage: page }),
+  setCurrentPage: (page) => {
+    if (!page) {
+      set({ currentPage: null });
+      return;
+    }
+    const state = get();
+    const fullPage = state.loadedPages[page.id];
+    set({ currentPage: fullPage ?? page });
+  },
+
+  isPageLoaded: (id: number) => {
+    return !!get().loadedPages[id];
+  },
 }));

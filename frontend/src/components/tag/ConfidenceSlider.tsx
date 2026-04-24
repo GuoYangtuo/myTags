@@ -11,7 +11,7 @@ export function ConfidenceSlider({ value, onChange, size = 'md' }: ConfidenceSli
     onChange(parseInt(e.target.value));
   };
 
-  getConfidenceColor(value);
+  const color = getConfidenceColor(value);
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
