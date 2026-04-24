@@ -134,7 +134,7 @@ export function ShareViewPage() {
           />
           <div className="flex-1 min-w-0">
             <h1 className="font-bold font-heading text-base md:text-lg truncate">
-              {page.user!.nickname} 的成分页面
+              {page.user!.nickname} 的标签
             </h1>
             {page.description && (
               <p className="text-xs md:text-sm text-text-secondary truncate">{page.description}</p>

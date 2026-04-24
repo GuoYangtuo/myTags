@@ -37,6 +37,64 @@ router.post('/register', async (req, res) => {
         password,
         nickname: data.nickname || data.email.split('@')[0],
         avatarSeed,
+        pages: {
+          create: [
+            {
+              name: '个人主页',
+              description: '展示个人基本信息',
+              categories: {
+                create: [
+                  { name: '关键属性', sortOrder: 0 },
+                  { name: '兴趣爱好', sortOrder: 1 },
+                  { name: '联系方式', sortOrder: 2 },
+                ],
+              },
+            },
+            {
+              name: '优秀经历',
+              description: '展示学习与工作经历',
+              categories: {
+                create: [
+                  { name: '学习经历', sortOrder: 0 },
+                  { name: '工作经历', sortOrder: 1 },
+                  { name: '个人荣誉', sortOrder: 2 },
+                ],
+              },
+            },
+            {
+              name: '我的缺点',
+              description: '诚实面对不足之处',
+              categories: {
+                create: [
+                  { name: '性格弱点', sortOrder: 0 },
+                  { name: '不擅长的事', sortOrder: 1 },
+                ],
+              },
+            },
+            {
+              name: '专业技能',
+              description: '掌握的专业技能',
+              categories: {
+                create: [
+                  { name: '编程语言', sortOrder: 0 },
+                  { name: '开发框架', sortOrder: 1 },
+                  { name: '工具软件', sortOrder: 2 },
+                ],
+              },
+            },
+            {
+              name: '收藏夹',
+              description: '喜欢的内容收藏',
+              categories: {
+                create: [
+                  { name: '阅读', sortOrder: 0 },
+                  { name: '音乐', sortOrder: 1 },
+                  { name: '影视', sortOrder: 2 },
+                ],
+              },
+            },
+          ],
+        },
       },
     });
 

@@ -12,13 +12,18 @@ import { Plus } from 'lucide-react';
 
 function AppLayout() {
   const { user } = useAuthStore();
-  const { currentPage, fetchPages, fetchPage, isPageLoaded, createPage, setCurrentPage } = usePageStore();
+  const { currentPage, pages, fetchPages, fetchPage, isPageLoaded, setCurrentPage, createPage } = usePageStore();
   const [newPageName, setNewPageName] = useState('');
   const [showNewPage, setShowNewPage] = useState(false);
 
   useEffect(() => {
     if (user) {
-      fetchPages();
+      fetchPages().then(() => {
+        const state = usePageStore.getState();
+        if (!state.currentPage && state.pages.length > 0) {
+          setCurrentPage(state.pages[0]);
+        }
+      });
     }
   }, [user]);
 
@@ -85,7 +90,7 @@ export default function App() {
                   </div>
                   <h1 className="text-4xl font-bold font-heading mb-3">myTags</h1>
                   <p className="text-text-secondary mb-8 leading-relaxed">
-                    轻松创建你的个人标签页面<br />
+                    创建你的个人标签页面<br />
                     让新朋友快速了解你是什么成分
                   </p>
                   <div className="space-y-3">
