@@ -17,5 +17,5 @@ export const tagApi = {
     api.put<Tag>(`/tags/${id}`, data).then(r => r.data),
   delete: (id: number) => api.delete(`/tags/${id}`).then(() => {}),
   reorder: (items: { id: number; categoryId: number; afterId: number | null }[]) =>
-    api.put('/tags/reorder', { items }).then(() => {}),
+    api.put<{ success: boolean; tags: { id: number; categoryId: number; sortOrder: number }[] }>('/tags/reorder', { items }).then(r => r.data),
 };

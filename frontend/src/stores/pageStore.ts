@@ -137,7 +137,39 @@ export const usePageStore = create<PageState>((set, get) => ({
   },
 
   reorderCategories: async (items) => {
-    await categoryApi.reorder(items);
+    const result = await categoryApi.reorder(items);
+    if (!result.categories) return;
+    set((state) => {
+      if (!state.currentPage) return state;
+      const cats = state.currentPage.categories ?? [];
+
+      const flatten = (list: Category[]): Category[] => {
+        const flat: Category[] = [];
+        for (const c of list) {
+          flat.push(c);
+          flat.push(...flatten(c.children ?? []));
+        }
+        return flat;
+      };
+
+      let flat = flatten(cats);
+      flat = flat.map((c) => {
+        const upd = result.categories.find((u) => u.id === c.id);
+        return upd ? { ...c, parentId: upd.parentId, sortOrder: upd.sortOrder } : c;
+      });
+
+      const rootCats = flat.filter((c) => c.parentId === null).sort((a, b) => a.sortOrder - b.sortOrder);
+      const buildTree = (parentId: number | null): Category[] => {
+        const children = flat
+          .filter((c) => c.parentId === parentId)
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+          .map((c) => ({ ...c, children: buildTree(c.id) }));
+        return children;
+      };
+
+      const newPage = { ...state.currentPage, categories: buildTree(null) };
+      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
+    });
   },
 
   createTag: async (pageId, categoryId, name, confidence = 50, description?, confidenceLabel?) => {
@@ -157,7 +189,42 @@ export const usePageStore = create<PageState>((set, get) => ({
   },
 
   reorderTags: async (items) => {
-    await tagApi.reorder(items);
+    const result = await tagApi.reorder(items);
+    if (!result.tags) return;
+    set((state) => {
+      if (!state.currentPage) return state;
+      const cats = state.currentPage.categories ?? [];
+
+      const collectTags = (list: Category[]): Tag[] => {
+        const tags: Tag[] = [];
+        for (const c of list) {
+          tags.push(...(c.tags ?? []));
+          tags.push(...collectTags(c.children ?? []));
+        }
+        return tags;
+      };
+
+      let allTags = collectTags(cats);
+      allTags = allTags.map((t) => {
+        const upd = result.tags.find((u) => u.id === t.id);
+        return upd ? { ...t, categoryId: upd.categoryId, sortOrder: upd.sortOrder } : t;
+      });
+
+      const addToTree = (list: Category[]): Category[] =>
+        list.map((c) => {
+          const catTags = allTags.filter((t) => t.categoryId === c.id);
+          allTags = allTags.filter((t) => t.categoryId !== c.id);
+          return {
+            ...c,
+            tags: catTags.sort((a, b) => a.sortOrder - b.sortOrder),
+            children: addToTree(c.children ?? []),
+          };
+        });
+
+      const newCats = addToTree(cats);
+      const newPage = { ...state.currentPage, categories: newCats };
+      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
+    });
   },
 
   addTagToPage: (tag) => {

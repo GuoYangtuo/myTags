@@ -72,6 +72,7 @@ const reorderSchema = z.object({
 router.put('/reorder', async (req: AuthRequest, res: Response) => {
   try {
     const data = reorderSchema.parse(req.body);
+    const updatedTags: { id: number; categoryId: number; sortOrder: number }[] = [];
 
     await prisma.$transaction(async (tx) => {
       for (const item of data.items) {
@@ -93,7 +94,6 @@ router.put('/reorder', async (req: AuthRequest, res: Response) => {
 
         let newOrder: number;
         if (nextOrder - afterOrder <= 0.0001) {
-          // Precision exhausted — rebalance the entire category
           const all = await tx.tag.findMany({
             where: { categoryId: item.categoryId, id: { not: item.id } },
             orderBy: { sortOrder: 'asc' },
@@ -108,14 +108,15 @@ router.put('/reorder', async (req: AuthRequest, res: Response) => {
           newOrder = (afterOrder + nextOrder) / 2;
         }
 
-        await tx.tag.update({
+        const updated = await tx.tag.update({
           where: { id: item.id },
           data: { categoryId: item.categoryId, sortOrder: newOrder },
         });
+        updatedTags.push({ id: updated.id, categoryId: updated.categoryId, sortOrder: updated.sortOrder });
       }
     });
 
-    res.json({ success: true });
+    res.json({ success: true, tags: updatedTags });
   } catch (err) {
     if (err instanceof z.ZodError) {
       res.status(400).json({ error: err.errors });

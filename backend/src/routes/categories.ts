@@ -116,6 +116,7 @@ router.put('/reorder', async (req: AuthRequest, res: Response) => {
     const catMap = Object.fromEntries(
       (await prisma.category.findMany({ where: { id: { in: items.map((i) => i.id) } } })).map((c) => [c.id, c])
     );
+    const updatedCats: { id: number; parentId: number | null; sortOrder: number }[] = [];
 
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
@@ -154,13 +155,14 @@ router.put('/reorder', async (req: AuthRequest, res: Response) => {
           newOrder = (afterOrder + nextOrder) / 2;
         }
 
-        await tx.category.update({
+        const updated = await tx.category.update({
           where: { id: item.id },
           data: { parentId: item.parentId, sortOrder: newOrder },
         });
+        updatedCats.push({ id: updated.id, parentId: updated.parentId, sortOrder: updated.sortOrder });
       }
     });
-    res.json({ success: true });
+    res.json({ success: true, categories: updatedCats });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

@@ -15,5 +15,5 @@ export const categoryApi = {
   update: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => api.put<Category>(`/categories/${id}`, data).then(r => r.data),
   delete: (id: number) => api.delete(`/categories/${id}`).then(() => {}),
   reorder: (items: { id: number; parentId: number | null; afterId: number | null }[]) =>
-    api.put('/categories/reorder', { items }).then(() => {}),
+    api.put<{ success: boolean; categories: { id: number; parentId: number | null; sortOrder: number }[] }>('/categories/reorder', { items }).then(r => r.data),
 };
