@@ -22,6 +22,9 @@ export interface Category {
   pageId: number;
   parentId: number | null;
   name: string;
+  description: string;
+  confidence: number;
+  confidenceLabel: string;
   sortOrder: number;
   children: Category[];
   tags: Tag[];
@@ -32,7 +35,9 @@ export interface Tag {
   pageId: number;
   categoryId: number;
   name: string;
+  description: string;
   confidence: number;
+  confidenceLabel: string;
   navUrl: string | null;
   sortOrder: number;
   createdAt: string;

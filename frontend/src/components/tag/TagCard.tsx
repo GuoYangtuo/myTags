@@ -65,7 +65,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
           <button
             onClick={() => setIsEditing(true)}
             className="flex-1 text-left font-bold font-heading text-base hover:text-accent-primary transition-colors"
-            title="点击编辑"
+            title={tag.description || "点击编辑"}
           >
             {tag.name}
           </button>
@@ -73,7 +73,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
       </div>
 
       <div className="flex items-center gap-2 w-full">
-        <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} />
+        <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} label={tag.confidenceLabel} />
       </div>
 
       <div className="flex items-center justify-end gap-1 mt-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">

@@ -11,6 +11,9 @@ const createCategorySchema = z.object({
   pageId: z.number(),
   parentId: z.number().nullable().optional(),
   name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  confidence: z.number().min(-20).max(120).optional(),
+  confidenceLabel: z.string().max(50).optional(),
 });
 
 router.post('/', async (req: AuthRequest, res: Response) => {
@@ -42,6 +45,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         parentId: data.parentId ?? null,
         name: data.name,
         sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+        description: data.description ?? "",
+        confidence: data.confidence ?? 50,
+        confidenceLabel: data.confidenceLabel ?? "置信度",
       },
     });
     res.json(category);
@@ -72,6 +78,9 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
       data: {
         name: req.body.name ?? category.name,
         parentId: req.body.parentId !== undefined ? (req.body.parentId ?? null) : category.parentId,
+        description: req.body.description !== undefined ? req.body.description : category.description,
+        confidence: req.body.confidence !== undefined ? req.body.confidence : category.confidence,
+        confidenceLabel: req.body.confidenceLabel !== undefined ? req.body.confidenceLabel : category.confidenceLabel,
       },
     });
     res.json(updated);

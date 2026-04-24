@@ -11,7 +11,9 @@ const createTagSchema = z.object({
   pageId: z.number(),
   categoryId: z.number(),
   name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
   confidence: z.number().min(-20).max(120).optional(),
+  confidenceLabel: z.string().max(50).optional(),
   navUrl: z.string().max(500).nullable().optional(),
 });
 
@@ -41,7 +43,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         pageId: data.pageId,
         categoryId: data.categoryId,
         name: data.name,
+        description: data.description ?? "",
         confidence: data.confidence ?? 50,
+        confidenceLabel: data.confidenceLabel ?? "置信度",
         navUrl: data.navUrl ?? null,
         sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
       },
@@ -73,7 +77,9 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
       where: { id: tagId },
       data: {
         name: req.body.name ?? tag.name,
+        description: req.body.description !== undefined ? req.body.description : tag.description,
         confidence: req.body.confidence !== undefined ? req.body.confidence : tag.confidence,
+        confidenceLabel: req.body.confidenceLabel !== undefined ? req.body.confidenceLabel : tag.confidenceLabel,
         navUrl: req.body.navUrl !== undefined ? req.body.navUrl : tag.navUrl,
         categoryId: req.body.categoryId ?? tag.categoryId,
         sortOrder: req.body.sortOrder ?? tag.sortOrder,

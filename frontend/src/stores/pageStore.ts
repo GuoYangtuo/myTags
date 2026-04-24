@@ -14,12 +14,12 @@ interface PageState {
   createPage: (name: string, description?: string) => Promise<Page>;
   updatePage: (id: number, data: { name?: string; description?: string }) => Promise<void>;
   deletePage: (id: number) => Promise<void>;
-  createCategory: (pageId: number, name: string, parentId?: number | null) => Promise<Category>;
-  updateCategory: (id: number, data: { name?: string; parentId?: number | null }) => Promise<void>;
+  createCategory: (pageId: number, name: string, parentId?: number | null, description?: string, confidence?: number, confidenceLabel?: string) => Promise<Category>;
+  updateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => Promise<void>;
   deleteCategory: (id: number) => Promise<void>;
   reorderCategories: (items: { id: number; parentId: number | null; sortOrder: number }[]) => Promise<void>;
-  createTag: (pageId: number, categoryId: number, name: string, confidence?: number) => Promise<Tag>;
-  updateTag: (id: number, data: Partial<Pick<Tag, 'name' | 'confidence' | 'navUrl' | 'categoryId' | 'sortOrder'>>) => Promise<void>;
+  createTag: (pageId: number, categoryId: number, name: string, confidence?: number, description?: string, confidenceLabel?: string) => Promise<Tag>;
+  updateTag: (id: number, data: Partial<Pick<Tag, 'name' | 'description' | 'confidence' | 'confidenceLabel' | 'navUrl' | 'categoryId' | 'sortOrder'>>) => Promise<void>;
   deleteTag: (id: number) => Promise<void>;
   reorderTags: (items: { id: number; categoryId: number; sortOrder: number }[]) => Promise<void>;
   addTagToPage: (tag: Tag) => void;
@@ -88,8 +88,8 @@ export const usePageStore = create<PageState>((set, get) => ({
     });
   },
 
-  createCategory: async (pageId, name, parentId) => {
-    const category = await categoryApi.create({ pageId, name, parentId });
+  createCategory: async (pageId, name, parentId, description, confidence, confidenceLabel) => {
+    const category = await categoryApi.create({ pageId, name, parentId, description, confidence, confidenceLabel });
     const state = get();
     if (state.currentPage && state.currentPage.id === pageId) {
       const cats = state.currentPage.categories ?? [];
@@ -140,8 +140,8 @@ export const usePageStore = create<PageState>((set, get) => ({
     await categoryApi.reorder(items);
   },
 
-  createTag: async (pageId, categoryId, name, confidence = 50) => {
-    const tag = await tagApi.create({ pageId, categoryId, name, confidence });
+  createTag: async (pageId, categoryId, name, confidence = 50, description, confidenceLabel) => {
+    const tag = await tagApi.create({ pageId, categoryId, name, confidence, description, confidenceLabel });
     get().addTagToPage(tag);
     return tag;
   },

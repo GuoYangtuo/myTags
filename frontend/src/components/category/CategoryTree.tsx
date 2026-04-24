@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Category, Tag } from '../../types';
 import { TagCard } from '../tag/TagCard';
+import { ConfidenceSlider } from '../tag/ConfidenceSlider';
 import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus } from 'lucide-react';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -11,8 +12,8 @@ interface CategoryTreeProps {
   allCategories: Category[];
   onUpdateTag: (tagId: number, data: Partial<Tag>) => void;
   onDeleteTag: (tagId: number) => void;
-  onAddTag: (name: string, categoryId: number) => void;
-  onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null }) => void;
+  onAddTag: (name: string, categoryId: number, description?: string, confidence?: number, confidenceLabel?: string) => void;
+  onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => void;
   onDeleteCategory: (id: number) => void;
   onCreateCategory: (name: string, parentId?: number | null) => void;
   onReorderTags: (items: { id: number; categoryId: number; sortOrder: number }[]) => void;
@@ -51,8 +52,8 @@ function SortableCategoryNode({
   allCategories: Category[];
   onUpdateTag: (tagId: number, data: Partial<Tag>) => void;
   onDeleteTag: (tagId: number) => void;
-  onAddTag: (name: string, categoryId: number) => void;
-  onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null }) => void;
+  onAddTag: (name: string, categoryId: number, description?: string, confidence?: number, confidenceLabel?: string) => void;
+  onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => void;
   onDeleteCategory: (id: number) => void;
   onCreateCategory: (name: string, parentId?: number | null) => void;
   onReorderTags: (items: { id: number; categoryId: number; sortOrder: number }[]) => void;
@@ -63,10 +64,16 @@ function SortableCategoryNode({
   const [expanded, setExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
+  const [editDescription, setEditDescription] = useState(category.description);
+  const [editConfidence, setEditConfidence] = useState(category.confidence);
+  const [editConfidenceLabel, setEditConfidenceLabel] = useState(category.confidenceLabel);
   const [showAddChild, setShowAddChild] = useState(false);
   const [showAddTag, setShowAddTag] = useState(false);
   const [newChildName, setNewChildName] = useState('');
   const [newTagName, setNewTagName] = useState('');
+  const [newTagDescription, setNewTagDescription] = useState('');
+  const [newTagConfidence, setNewTagConfidence] = useState(50);
+  const [newTagConfidenceLabel, setNewTagConfidenceLabel] = useState('置信度');
   const [dragOver, setDragOver] = useState(false);
 
   const { setNodeRef: setDropRef } = useDroppable({ id: `cat-drop-${category.id}` });
@@ -85,8 +92,11 @@ function SortableCategoryNode({
 
   const handleTagSubmit = () => {
     if (!newTagName.trim()) return;
-    onAddTag(newTagName.trim(), category.id);
+    onAddTag(newTagName.trim(), category.id, newTagDescription, newTagConfidence, newTagConfidenceLabel);
     setNewTagName('');
+    setNewTagDescription('');
+    setNewTagConfidence(50);
+    setNewTagConfidenceLabel('置信度');
     setShowAddTag(false);
   };
 
@@ -114,24 +124,54 @@ function SortableCategoryNode({
         </button>
 
         {isEditing ? (
-          <input
-            type="text"
-            value={editName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
-            onBlur={() => { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim() }); setIsEditing(false); }}
-            onKeyDown={(e: React.KeyboardEvent) => {
-              if (e.key === 'Enter') { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim() }); setIsEditing(false); }
-              if (e.key === 'Escape') { setEditName(category.name); setIsEditing(false); }
-            }}
-            className="flex-1 px-2 py-1 text-sm font-bold rounded border border-accent-primary outline-none bg-white min-w-0"
-            autoFocus
-            {...attributes}
-            {...listeners}
-          />
+          <div className="flex-1 flex flex-col gap-2 min-w-0">
+            <input
+              type="text"
+              value={editName}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
+              className="px-2 py-1 text-sm font-bold rounded border border-accent-primary outline-none bg-white min-w-0"
+              autoFocus
+              {...attributes}
+              {...listeners}
+            />
+            <input
+              type="text"
+              value={editDescription}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditDescription(e.target.value)}
+              placeholder="描述..."
+              className="px-2 py-1 text-xs rounded border border-border-light outline-none focus:border-accent-primary bg-white min-w-0"
+            />
+            <div className="px-1">
+              <ConfidenceSlider value={editConfidence} onChange={setEditConfidence} label={editConfidenceLabel} size="sm" debounceMs={0} />
+            </div>
+            <input
+              type="text"
+              value={editConfidenceLabel}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditConfidenceLabel(e.target.value)}
+              placeholder="标签字（如：熟练度）"
+              className="px-2 py-1 text-xs rounded border border-border-light outline-none focus:border-accent-primary bg-white min-w-0"
+            />
+            <div className="flex gap-1">
+              <button
+                onBlur={() => { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim(), description: editDescription, confidence: editConfidence, confidenceLabel: editConfidenceLabel }); setIsEditing(false); }}
+                onClick={() => { if (editName.trim()) onUpdateCategory(category.id, { name: editName.trim(), description: editDescription, confidence: editConfidence, confidenceLabel: editConfidenceLabel }); setIsEditing(false); }}
+                className="px-2 py-0.5 text-xs bg-accent-primary text-white rounded border border-border-strong hover:bg-orange-600 whitespace-nowrap"
+              >
+                保存
+              </button>
+              <button
+                onClick={() => { setEditName(category.name); setEditDescription(category.description); setEditConfidence(category.confidence); setEditConfidenceLabel(category.confidenceLabel); setIsEditing(false); }}
+                className="px-2 py-0.5 text-xs bg-bg-secondary rounded border border-border-strong hover:bg-border-light whitespace-nowrap"
+              >
+                取消
+              </button>
+            </div>
+          </div>
         ) : (
           <button
             className="flex-1 text-left font-bold font-heading text-sm md:text-base hover:text-accent-primary transition-colors cursor-grab active:cursor-grabbing truncate"
             onDoubleClick={() => { setIsEditing(true); }}
+            title={category.description || category.name}
             {...attributes}
             {...listeners}
           >
@@ -179,18 +219,41 @@ function SortableCategoryNode({
       )}
 
       {showAddTag && (
-        <div className="ml-4 sm:ml-6 mb-2 flex gap-2 flex-wrap sm:flex-nowrap category-enter">
+        <div className="ml-4 sm:ml-6 mb-2 flex flex-col gap-2 category-enter">
           <input
             type="text"
             value={newTagName}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTagName(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleTagSubmit(); if (e.key === 'Escape') setShowAddTag(false); }}
             placeholder="标签名称..."
-            className="min-w-0 flex-1 px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary"
+            className="w-full px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary"
             autoFocus
           />
-          <button onClick={handleTagSubmit} className="px-3 py-1.5 text-sm bg-accent-primary text-white rounded-lg border border-border-strong hover:bg-orange-600 transition-opacity whitespace-nowrap">添加</button>
-          <button onClick={() => setShowAddTag(false)} className="px-3 py-1.5 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors whitespace-nowrap">取消</button>
+          <input
+            type="text"
+            value={newTagDescription}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTagDescription(e.target.value)}
+            onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleTagSubmit(); if (e.key === 'Escape') setShowAddTag(false); }}
+            placeholder="描述（可选）..."
+            className="w-full px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary"
+          />
+          <div className="px-1">
+            <ConfidenceSlider value={newTagConfidence} onChange={setNewTagConfidence} label={newTagConfidenceLabel} size="sm" debounceMs={0} />
+          </div>
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+            <input
+              type="text"
+              value={newTagConfidenceLabel}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTagConfidenceLabel(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleTagSubmit(); if (e.key === 'Escape') setShowAddTag(false); }}
+              placeholder="标签字（如：熟练度）"
+              className="min-w-0 flex-1 px-3 py-1.5 text-sm rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleTagSubmit} className="px-3 py-1.5 text-sm bg-accent-primary text-white rounded-lg border border-border-strong hover:bg-orange-600 transition-opacity whitespace-nowrap">添加</button>
+            <button onClick={() => setShowAddTag(false)} className="px-3 py-1.5 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors whitespace-nowrap">取消</button>
+          </div>
         </div>
       )}
 

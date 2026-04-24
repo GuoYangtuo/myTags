@@ -4,11 +4,12 @@ import { getConfidenceColor } from '../../utils/helpers';
 interface ConfidenceSliderProps {
   value: number;
   onChange: (value: number) => void;
+  label?: string;
   size?: 'sm' | 'md';
   debounceMs?: number;
 }
 
-export function ConfidenceSlider({ value, onChange, size = 'md', debounceMs = 500 }: ConfidenceSliderProps) {
+export function ConfidenceSlider({ value, onChange, label = '置信度', size = 'md', debounceMs = 500 }: ConfidenceSliderProps) {
   const [localValue, setLocalValue] = useState(value);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -40,7 +41,7 @@ export function ConfidenceSlider({ value, onChange, size = 'md', debounceMs = 50
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-      <span style={{ fontSize: '14px', color: '#6b7280', whiteSpace: 'nowrap' }}>置信度</span>
+      <span style={{ fontSize: '14px', color: '#6b7280', whiteSpace: 'nowrap' }}>{label}</span>
       <div className={`confidence-slider-wrapper ${size === 'sm' ? 'sm' : ''}`} style={{ flex: 1, minWidth: 0 }}>
         <input
           type="range"
