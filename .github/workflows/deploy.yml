@@ -99,7 +99,6 @@ jobs:
             npm install --production
 
             echo "重启后端服务..."
-            pm2 restart mytags_backend || pm2 start dist/index.js --name mytags_backend
-            pm2 save
+            /root/.nvm/versions/node/v24.13.0/bin/pm2 restart mytags_backend
 
             echo "========== 部署完成 =========="

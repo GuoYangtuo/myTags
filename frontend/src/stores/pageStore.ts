@@ -78,18 +78,19 @@ export const usePageStore = create<PageState>((set, get) => ({
     const category = await categoryApi.create({ pageId, name, parentId });
     const state = get();
     if (state.currentPage && state.currentPage.id === pageId) {
+      const cats = state.currentPage.categories ?? [];
       const addToTree = (cats: Category[]): Category[] => {
         return cats.map((c) => {
           if (c.id === category.parentId) {
-            return { ...c, children: [...c.children, category] };
+            return { ...c, children: [...(c.children ?? []), category] };
           }
-          return { ...c, children: addToTree(c.children) };
+          return { ...c, children: addToTree(c.children ?? []) };
         });
       };
       if (category.parentId === null) {
-        set({ currentPage: { ...state.currentPage, categories: [...state.currentPage.categories, { ...category, children: [], tags: [] }] } });
+        set({ currentPage: { ...state.currentPage, categories: [...cats, { ...category, children: [], tags: [] }] } });
       } else {
-        set({ currentPage: { ...state.currentPage, categories: addToTree(state.currentPage.categories) } });
+        set({ currentPage: { ...state.currentPage, categories: addToTree(cats) } });
       }
     }
     return category;
@@ -99,10 +100,11 @@ export const usePageStore = create<PageState>((set, get) => ({
     const cat = await categoryApi.update(id, data);
     set((state) => {
       if (!state.currentPage) return state;
+      const cats = state.currentPage.categories ?? [];
       const updateInTree = (cats: Category[]): Category[] => {
-        return cats.map((c) => (c.id === id ? { ...c, ...cat } : { ...c, children: updateInTree(c.children) }));
+        return cats.map((c) => (c.id === id ? { ...c, ...cat } : { ...c, children: updateInTree(c.children ?? []) }));
       };
-      return { currentPage: { ...state.currentPage, categories: updateInTree(state.currentPage.categories) } };
+      return { currentPage: { ...state.currentPage, categories: updateInTree(cats) } };
     });
   },
 
@@ -110,11 +112,12 @@ export const usePageStore = create<PageState>((set, get) => ({
     await categoryApi.delete(id);
     set((state) => {
       if (!state.currentPage) return state;
+      const cats = state.currentPage.categories ?? [];
       const removeFromTree = (cats: Category[]): Category[] =>
         cats
           .filter((c) => c.id !== id)
-          .map((c) => ({ ...c, children: removeFromTree(c.children) }));
-      return { currentPage: { ...state.currentPage, categories: removeFromTree(state.currentPage.categories) } };
+          .map((c) => ({ ...c, children: removeFromTree(c.children ?? []) }));
+      return { currentPage: { ...state.currentPage, categories: removeFromTree(cats) } };
     });
   },
 
@@ -145,38 +148,41 @@ export const usePageStore = create<PageState>((set, get) => ({
   addTagToPage: (tag) => {
     set((state) => {
       if (!state.currentPage) return state;
+      const cats = state.currentPage.categories ?? [];
       const addToTree = (cats: Category[]): Category[] =>
         cats.map((c) => {
-          if (c.id === tag.categoryId) return { ...c, tags: [...c.tags, tag] };
-          return { ...c, children: addToTree(c.children) };
+          if (c.id === tag.categoryId) return { ...c, tags: [...(c.tags ?? []), tag] };
+          return { ...c, children: addToTree(c.children ?? []) };
         });
-      return { currentPage: { ...state.currentPage, categories: addToTree(state.currentPage.categories) } };
+      return { currentPage: { ...state.currentPage, categories: addToTree(cats) } };
     });
   },
 
   updateTagInPage: (tag) => {
     set((state) => {
       if (!state.currentPage) return state;
+      const cats = state.currentPage.categories ?? [];
       const updateInTree = (cats: Category[]): Category[] =>
         cats.map((c) => ({
           ...c,
-          tags: c.tags.map((t) => (t.id === tag.id ? { ...t, ...tag } : t)),
-          children: updateInTree(c.children),
+          tags: (c.tags ?? []).map((t) => (t.id === tag.id ? { ...t, ...tag } : t)),
+          children: updateInTree(c.children ?? []),
         }));
-      return { currentPage: { ...state.currentPage, categories: updateInTree(state.currentPage.categories) } };
+      return { currentPage: { ...state.currentPage, categories: updateInTree(cats) } };
     });
   },
 
   removeTagFromPage: (tagId) => {
     set((state) => {
       if (!state.currentPage) return state;
+      const cats = state.currentPage.categories ?? [];
       const removeFromTree = (cats: Category[]): Category[] =>
         cats.map((c) => ({
           ...c,
-          tags: c.tags.filter((t) => t.id !== tagId),
-          children: removeFromTree(c.children),
+          tags: (c.tags ?? []).filter((t) => t.id !== tagId),
+          children: removeFromTree(c.children ?? []),
         }));
-      return { currentPage: { ...state.currentPage, categories: removeFromTree(state.currentPage.categories) } };
+      return { currentPage: { ...state.currentPage, categories: removeFromTree(cats) } };
     });
   },
 

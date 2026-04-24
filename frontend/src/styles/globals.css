@@ -39,6 +39,26 @@
 }
 
 @layer components {
+  input[type="range"].confidence-slider {
+    height: 20px !important;
+    background: linear-gradient(to right, #94A3B8 0%, #FF6B35 50%, #22C55E 100%);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"].confidence-slider::-webkit-slider-thumb {
+    height: 20px !important;
+  }
+
+  input[type="range"].confidence-slider[data-size="sm"] {
+    height: 16px !important;
+  }
+
+  input[type="range"].confidence-slider[data-size="sm"]::-webkit-slider-thumb {
+    height: 16px !important;
+  }
+
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
