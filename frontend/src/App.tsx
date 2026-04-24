@@ -8,13 +8,10 @@ import { BottomNav } from './components/layout/BottomNav';
 import { PageEditor } from './pages/PageEditor';
 import { ShareViewPage } from './pages/ShareViewPage';
 import { AuthModal } from './components/auth/AuthModal';
-import { Plus } from 'lucide-react';
 
 function AppLayout() {
   const { user } = useAuthStore();
-  const { currentPage, pages, fetchPages, fetchPage, isPageLoaded, setCurrentPage, createPage } = usePageStore();
-  const [newPageName, setNewPageName] = useState('');
-  const [showNewPage, setShowNewPage] = useState(false);
+  const { currentPage, fetchPages, fetchPage, isPageLoaded, setCurrentPage } = usePageStore();
 
   useEffect(() => {
     if (user) {
@@ -36,14 +33,6 @@ function AppLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage?.id, user]);
 
-  const handleCreatePage = async () => {
-    if (!newPageName.trim()) return;
-    const page = await createPage(newPageName.trim());
-    setNewPageName('');
-    setShowNewPage(false);
-    setCurrentPage(page);
-  };
-
   return (
     <div className="min-h-screen bg-bg-primary">
       <Header />
@@ -56,9 +45,7 @@ function AppLayout() {
         <PageEditor />
 
         {/* Mobile bottom navigation */}
-        <BottomNav
-          onAddPage={() => setShowNewPage(true)}
-        />
+        <BottomNav />
       </div>
     </div>
   );

@@ -1,16 +1,25 @@
 import { Layers, Plus, Share2 } from 'lucide-react';
 import { usePageStore } from '../../stores/pageStore';
-import { useAuthStore } from '../../stores/authStore';
 import { useState } from 'react';
+import { Modal, Input, Button } from '../ui';
 
 interface BottomNavProps {
-  onAddPage?: () => void;
   onShare?: () => void;
 }
 
-export function BottomNav({ onAddPage, onShare }: BottomNavProps) {
-  const { pages, currentPage, setCurrentPage } = usePageStore();
+export function BottomNav({ onShare }: BottomNavProps) {
+  const { pages, currentPage, setCurrentPage, createPage } = usePageStore();
   const [showPageList, setShowPageList] = useState(false);
+  const [showNewPage, setShowNewPage] = useState(false);
+  const [newPageName, setNewPageName] = useState('');
+
+  const handleCreate = async () => {
+    if (!newPageName.trim()) return;
+    const page = await createPage(newPageName.trim());
+    setNewPageName('');
+    setShowNewPage(false);
+    setCurrentPage(page);
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
@@ -74,7 +83,7 @@ export function BottomNav({ onAddPage, onShare }: BottomNavProps) {
           </button>
 
           <button
-            onClick={onAddPage}
+            onClick={() => setShowNewPage(true)}
             className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl text-text-secondary hover:text-accent-primary transition-colors"
           >
             <Plus size={20} />
@@ -93,6 +102,23 @@ export function BottomNav({ onAddPage, onShare }: BottomNavProps) {
         {/* Safe area padding for devices with home indicator */}
         <div className="h-safe-area-bottom bg-bg-card" />
       </div>
+
+      <Modal open={showNewPage} onClose={() => setShowNewPage(false)} title="新建页面" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-text-secondary">向不同的朋友展示我不同的一面...</p>
+          <Input
+            value={newPageName}
+            onChange={(e) => setNewPageName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
+            placeholder="页面名称..."
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setShowNewPage(false)} className="flex-1">取消</Button>
+            <Button onClick={handleCreate} className="flex-1">创建</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
