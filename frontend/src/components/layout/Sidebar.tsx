@@ -2,11 +2,7 @@ import { useState } from 'react';
 import { usePageStore } from '../../stores/pageStore';
 import { Plus, Edit2, Trash2, Layers } from 'lucide-react';
 
-interface SidebarProps {
-  onAddPage?: () => void;
-}
-
-export function Sidebar({ onAddPage }: SidebarProps) {
+export function Sidebar() {
   const { pages, currentPage, setCurrentPage, createPage, deletePage, updatePage } = usePageStore();
   const [showNewPage, setShowNewPage] = useState(false);
   const [newPageName, setNewPageName] = useState('');
@@ -36,10 +32,7 @@ export function Sidebar({ onAddPage }: SidebarProps) {
             我的页面
           </h2>
           <button
-            onClick={() => {
-              if (onAddPage) onAddPage();
-              else setShowNewPage(true);
-            }}
+            onClick={() => setShowNewPage(true)}
             className="w-7 h-7 rounded-lg bg-accent-primary text-white border-2 border-border-strong flex items-center justify-center hover:bg-orange-600 transition-colors shadow-[2px_2px_0_var(--color-border-strong)]"
           >
             <Plus size={16} />
@@ -48,6 +41,7 @@ export function Sidebar({ onAddPage }: SidebarProps) {
 
         {showNewPage && (
           <div className="mb-3 p-3 bg-bg-card rounded-xl border-2 border-border-strong category-enter">
+            <p className="text-xs text-text-secondary mb-2">向不同的朋友展示我不同的一面...</p>
             <input
               type="text"
               value={newPageName}
@@ -58,8 +52,8 @@ export function Sidebar({ onAddPage }: SidebarProps) {
               autoFocus
             />
             <div className="flex gap-2 mt-2">
+              <button onClick={() => setShowNewPage(false)} className="px-3 py-1 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors">取消</button>
               <button onClick={handleCreate} className="flex-1 px-3 py-1 text-sm bg-accent-primary text-white rounded-lg border border-border-strong hover:bg-orange-600 transition-colors">创建</button>
-              <button onClick={() => setShowNewPage(false)} className="flex-1 px-3 py-1 text-sm bg-bg-secondary rounded-lg border border-border-strong hover:bg-border-light transition-colors">取消</button>
             </div>
           </div>
         )}
@@ -120,10 +114,7 @@ export function Sidebar({ onAddPage }: SidebarProps) {
                 <Layers size={32} className="mx-auto opacity-30" />
               </div>
               还没有页面<br />
-              <button onClick={() => {
-                if (onAddPage) onAddPage();
-                else setShowNewPage(true);
-              }} className="text-accent-primary underline mt-1">创建一个吧</button>
+              <button onClick={() => setShowNewPage(true)} className="text-accent-primary underline mt-1">创建一个吧</button>
             </div>
           )}
         </div>

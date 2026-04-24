@@ -50,7 +50,7 @@ function AppLayout() {
       <div className="flex">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
-          <Sidebar onAddPage={() => setShowNewPage(true)} />
+          <Sidebar />
         </div>
 
         <PageEditor />
