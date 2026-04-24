@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Tag } from '../../types';
 import { ConfidenceSlider } from './ConfidenceSlider';
-import { getConfidenceColor, isNoConfidence } from '../../utils/helpers';
+import { getConfidenceColor, isNoConfidence, NO_CONFIDENCE_VALUE } from '../../utils/helpers';
 import { Edit2, Trash2, Link2, ExternalLink, X, ChevronDown } from 'lucide-react';
 import { Modal, Input, Button } from '../ui';
 
@@ -74,8 +74,8 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
     onUpdate({
       name: editName.trim() || tag.name,
       description: editDescription.trim(),
-      confidence: useConfidence ? editConfidence : 0,
-      confidenceLabel: useConfidence ? editConfidenceLabel.trim() : '',
+      confidence: useConfidence ? editConfidence : NO_CONFIDENCE_VALUE,
+      confidenceLabel: editConfidenceLabel.trim() || '置信度',
     });
     setShowEditModal(false);
   };
@@ -184,7 +184,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
             </div>
 
             <label className="flex items-center gap-2 cursor-pointer select-none">
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <input
                   type="checkbox"
                   checked={useConfidence}
@@ -200,8 +200,12 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
                   )}
                 </div>
               </div>
-              {useConfidence ? (
-                <div className="relative" ref={labelDropdownRef}>
+              <span className="text-sm">{useConfidence ? '使用置信度' : '不使用置信度'}</span>
+            </label>
+
+            {useConfidence && (
+              <div className="flex items-center gap-2" style={{ overflow: 'visible', position: 'relative', zIndex: 1 }}>
+                <div className="relative flex-shrink-0" ref={labelDropdownRef} style={{ overflow: 'visible', position: 'relative', zIndex: 1 }}>
                   <button
                     onClick={() => setShowLabelDropdown(!showLabelDropdown)}
                     className="flex items-center gap-1 px-2 py-1.5 rounded-lg border-2 border-border-strong hover:border-accent-secondary transition-colors text-sm text-text-secondary whitespace-nowrap shadow-[2px_2px_0_var(--color-border-strong)] hover:shadow-[2px_2px_0_var(--color-accent-secondary)]"
@@ -210,7 +214,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
                     <ChevronDown size={12} className={`transition-transform ${showLabelDropdown ? 'rotate-180' : ''}`} />
                   </button>
                   {showLabelDropdown && (
-                    <div className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[3px_3px_0_var(--color-border-strong)] z-20 py-1 min-w-[120px] category-enter">
+                    <div className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[3px_3px_0_var(--color-border-strong)] py-1 min-w-[120px] category-enter" style={{ overflow: 'visible', zIndex: 1000 }}>
                       {CONFIDENCE_LABEL_PRESETS.map((preset) => (
                         <button
                           key={preset}
@@ -237,14 +241,9 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
                     </div>
                   )}
                 </div>
-              ) : (
-                <span className="text-xs text-text-secondary/60 italic">不使用置信度</span>
-              )}
-            </label>
-
-            {useConfidence && (
-              <div className="pl-9">
-                <ConfidenceSlider value={editConfidence} onChange={setEditConfidence} label="" size="sm" debounceMs={0} />
+                <div className="flex-1">
+                  <ConfidenceSlider value={editConfidence} onChange={setEditConfidence} label="" size="sm" debounceMs={0} />
+                </div>
               </div>
             )}
           </div>
