@@ -72,7 +72,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 w-full">
         <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} />
       </div>
 

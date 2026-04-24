@@ -11,21 +11,22 @@ export function ConfidenceSlider({ value, onChange, size = 'md' }: ConfidenceSli
     onChange(parseInt(e.target.value));
   };
 
-  const color = getConfidenceColor(value);
-  const trackHeight = size === 'sm' ? 6 : 8;
+  getConfidenceColor(value);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <input
-        type="range"
-        min={-20}
-        max={120}
-        value={value}
-        onChange={handleChange}
-        className="confidence-slider"
-        data-size={size}
-      />
-      <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '14px', color }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+      <span style={{ fontSize: '14px', color: '#6b7280', whiteSpace: 'nowrap' }}>置信度</span>
+      <div className={`confidence-slider-wrapper ${size === 'sm' ? 'sm' : ''}`} style={{ flex: 1, minWidth: 0 }}>
+        <input
+          type="range"
+          min={-20}
+          max={120}
+          value={value}
+          onChange={handleChange}
+          className={`confidence-slider ${size === 'sm' ? 'sm' : ''}`}
+        />
+      </div>
+      <span style={{ fontFamily: 'monospace', fontWeight: 'bold', fontSize: '14px', color: '#6b7280' }}>
         {value}%
       </span>
     </div>
