@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Tag } from '../../types';
 import { ConfidenceSlider } from './ConfidenceSlider';
-import { TagTooltip } from './TagTooltip';
+import { TagDescriptionTooltip } from './TagDescriptionTooltip';
 import { getConfidenceColor } from '../../utils/helpers';
 import { Edit2, Trash2, Link2, ExternalLink, X } from 'lucide-react';
 
@@ -63,7 +63,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
             autoFocus
           />
         ) : (
-          <TagTooltip content={tag.description}>
+          <TagDescriptionTooltip tagName={tag.name} description={tag.description}>
             <button
               onClick={() => setIsEditing(true)}
               className="flex-1 text-left font-bold font-heading text-base hover:text-accent-primary transition-colors cursor-help"
@@ -71,7 +71,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
             >
               {tag.name}
             </button>
-          </TagTooltip>
+          </TagDescriptionTooltip>
         )}
       </div>
 

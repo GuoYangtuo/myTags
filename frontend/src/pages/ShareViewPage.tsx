@@ -4,7 +4,7 @@ import { publicApi } from '../api/public';
 import type { ShareData, Category } from '../types';
 import { ChevronDown, ChevronRight, ExternalLink, Clock, User } from 'lucide-react';
 import { formatDate, getConfidenceColor } from '../utils/helpers';
-import { TagTooltip } from '../components/tag/TagTooltip';
+import { TagDescriptionTooltip } from '../components/tag/TagDescriptionTooltip';
 
 function PublicCategory({ category, depth = 0 }: { category: Category; depth?: number }) {
   const [expanded, setExpanded] = useState(true);
@@ -40,9 +40,9 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
             {(category.tags ?? []).map((tag) => (
               <div key={tag.id} className="bg-bg-card rounded-xl border-2 border-border-strong p-4 group">
                 <div className="flex items-center justify-between mb-3">
-                  <TagTooltip content={tag.description}>
+                  <TagDescriptionTooltip tagName={tag.name} description={tag.description}>
                     <span className="font-bold font-heading text-base cursor-help">{tag.name}</span>
-                  </TagTooltip>
+                  </TagDescriptionTooltip>
                   {tag.navUrl && (
                     <a
                       href={tag.navUrl}
