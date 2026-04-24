@@ -45,19 +45,19 @@ function SortableTagCard({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
 
   if (isThisDragging) {
     return (
-      <div ref={setNodeRef} className="tag-card rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5" style={{ minHeight: 72 }} />
+      <div ref={setNodeRef} className="tag-card rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 opacity-50" style={{ minHeight: 72 }} />
     );
   }
 
   return (
-    <div ref={setNodeRef} {...attributes} {...listeners} data-tag-card={`tag-${tag.id}`}>
-      <div className={`relative ${isThisOver ? 'opacity-40' : ''}`}>
+      <div ref={setNodeRef} {...attributes} {...listeners} data-tag-card={`tag-${tag.id}`}>
+        <div className={`relative${isThisOver ? ' overflow-hidden rounded-xl' : ''}${isThisOver ? ' opacity-20' : ''}`}>
         {isThisOver && (
-          <div className="absolute inset-0 flex z-10 pointer-events-none">
-            <div className={`w-1/2 flex items-center justify-center text-xs font-bold text-white bg-accent-primary/80 ${overInfo?.side === 'left' ? '' : 'opacity-30'}`}>
+          <div className="absolute inset-0 flex z-10 pointer-events-none rounded-xl">
+            <div className={`w-1/2 flex items-center justify-center text-base font-bold text-black bg-accent-primary/90 rounded-xl ${overInfo?.side === 'left' ? '' : 'opacity-30'}`}>
               {overInfo?.side === 'left' ? '← 放左边' : ''}
             </div>
-            <div className={`w-1/2 flex items-center justify-center text-xs font-bold text-white bg-accent-primary/80 ${overInfo?.side === 'right' ? '' : 'opacity-30'}`}>
+            <div className={`w-1/2 flex items-center justify-center text-base font-bold text-black bg-accent-primary/90 rounded-xl ${overInfo?.side === 'right' ? '' : 'opacity-30'}`}>
               {overInfo?.side === 'right' ? '放右边 →' : ''}
             </div>
           </div>
@@ -144,26 +144,26 @@ function SortableCategoryNode({
       className={`${category.parentId === null ? '' : 'ml-2 sm:ml-4 pl-2 sm:pl-4 border-l-2 border-border-light'} mb-3`}
     >
       {isThisDragging ? (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 mb-2" style={{ minHeight: 52 }} />
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 mb-2 opacity-50" style={{ minHeight: 52 }} />
       ) : (
         <div
           ref={setDragRef}
           data-cat-bar
           className={`relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/70 group transition-all duration-150 mb-2 ${
             dragOver ? 'ring-2 ring-accent-primary ring-offset-2 bg-accent-primary/5' : ''
-          } ${isThisOver ? 'opacity-40' : ''}`}
+          } ${isThisOver ? 'opacity-20' : ''}`}
         >
           {/* Drop position overlay for categories */}
           {isThisOver && activeItemId?.startsWith('cat-') && (
             <div className="absolute inset-0 flex z-10 pointer-events-none rounded-xl overflow-hidden">
-              {overInfo?.side === 'top' && <div className="absolute top-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-2 py-0.5 rounded bg-accent-primary/80 text-white text-xs font-bold">放在上方</div></div>}
-              {overInfo?.side === 'bottom' && <div className="absolute bottom-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-2 py-0.5 rounded bg-accent-primary/80 text-white text-xs font-bold">放在下方</div></div>}
-              {overInfo?.side === 'child' && <div className="absolute inset-0 flex items-center justify-center"><div className="px-2 py-0.5 rounded bg-accent-primary/80 text-white text-xs font-bold">设为子类</div></div>}
+              {overInfo?.side === 'top' && <div className="absolute top-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary/90 text-bg-primary text-sm font-bold shadow-lg">放在上方</div></div>}
+              {overInfo?.side === 'bottom' && <div className="absolute bottom-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary/90 text-bg-primary text-sm font-bold shadow-lg">放在下方</div></div>}
+              {overInfo?.side === 'child' && <div className="absolute inset-0 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary/90 text-bg-primary text-sm font-bold shadow-lg">设为子类</div></div>}
             </div>
           )}
           {isThisOver && activeItemId?.startsWith('tag-') && (category.tags ?? []).length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none rounded-xl">
-              <div className="px-2 py-0.5 rounded bg-accent-primary/80 text-white text-xs font-bold">放入此分类</div>
+              <div className="px-3 py-1 rounded-xl bg-accent-primary/90 text-bg-primary text-sm font-bold shadow-lg">放入此分类</div>
             </div>
           )}
           <button
@@ -569,11 +569,11 @@ export function CategoryTree({
 
       <DragOverlay dropAnimation={null}>
         {activeItem?.type === 'tag' ? (
-          <div className="opacity-90 shadow-2xl scale-105 rotate-1 cursor-grabbing">
+          <div className="opacity-60 shadow-2xl rotate-3 cursor-grabbing">
             <TagCard tag={activeItem.data as Tag} onUpdate={() => {}} onDelete={() => {}} />
           </div>
         ) : activeItem?.type === 'category' ? (
-          <div className="opacity-90 shadow-2xl scale-105 rotate-1 cursor-grabbing flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/90 font-bold font-heading text-sm">
+          <div className="opacity-60 shadow-2xl rotate-3 cursor-grabbing flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/90 font-bold font-heading text-sm">
             {(activeItem.data as Category).name}
           </div>
         ) : null}
