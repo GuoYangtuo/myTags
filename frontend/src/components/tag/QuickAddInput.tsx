@@ -125,7 +125,7 @@ export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAdd
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
           onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleSubmit(); }}
           placeholder="今天又新增了什么成分？"
-          className="flex-1 px-3 md:px-4 py-2 rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary text-base h-10"
+          className="flex-1 px-3 md:px-4 py-2 rounded-lg border-2 border-border-strong outline-none focus:border-accent-primary text-base h-10 min-w-0"
         />
 
         <button
