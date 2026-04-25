@@ -100,7 +100,7 @@ export function TagDescriptionTooltip({
         measure();
         setVisible(true);
       }
-    }, 500);
+    }, 100);
   }, [description, editable, clearHideTimer, clearShowTimer, measure]);
 
   const hide = useCallback(() => {

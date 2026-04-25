@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicApi } from '../api/public';
 import type { ShareData, Category } from '../types';
-import { ChevronDown, ChevronRight, ExternalLink, Clock, User } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Clock, User, HelpCircle } from 'lucide-react';
 import { formatDate, isNoConfidence } from '../utils/helpers';
 import { TagDescriptionTooltip } from '../components/tag/TagDescriptionTooltip';
 
@@ -40,16 +40,19 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
             {(category.tags ?? []).map((tag) => (
               <div key={tag.id} className="bg-bg-card rounded-xl border-2 border-border-strong p-3 group">
                 <div className="flex items-center justify-between gap-2">
-                  <TagDescriptionTooltip tagName={tag.name} description={tag.description}>
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="font-bold font-heading text-base cursor-help truncate">{tag.name}</span>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="font-bold font-heading text-base truncate">{tag.name}</span>
+                      {tag.description && (
+                        <TagDescriptionTooltip tagName={tag.name} description={tag.description}>
+                          <HelpCircle size={14} className="text-text-secondary/80 flex-shrink-0 cursor-help" />
+                        </TagDescriptionTooltip>
+                      )}
                       {!isNoConfidence(tag.confidence) && (
                         <span className="text-xs text-text-secondary/60 flex-shrink-0">
                           {tag.confidenceLabel} {tag.confidence}%
                         </span>
                       )}
                     </div>
-                  </TagDescriptionTooltip>
                   {tag.navUrl && (
                     <a
                       href={tag.navUrl}
