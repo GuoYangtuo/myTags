@@ -31,71 +31,56 @@ router.post('/register', async (req, res) => {
     const password = await bcrypt.hash(data.password, 10);
     const avatarSeed = Math.random().toString(36).substring(2, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        password,
-        nickname: data.nickname || data.email.split('@')[0],
-        avatarSeed,
-        pages: {
-          create: [
-            {
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email: data.email,
+          password,
+          nickname: data.nickname || data.email.split('@')[0],
+          avatarSeed,
+          pages: {
+            create: {
               name: '个人主页',
-              description: '展示个人基本信息',
-              categories: {
-                create: [
-                  { name: '关键属性', sortOrder: 0 },
-                  { name: '兴趣爱好', sortOrder: 1 },
-                  { name: '联系方式', sortOrder: 2 },
-                ],
-              },
             },
-            {
-              name: '优秀经历',
-              description: '展示学习与工作经历',
-              categories: {
-                create: [
-                  { name: '学习经历', sortOrder: 0 },
-                  { name: '工作经历', sortOrder: 1 },
-                  { name: '个人荣誉', sortOrder: 2 },
-                ],
-              },
-            },
-            {
-              name: '我的缺点',
-              description: '诚实面对不足之处',
-              categories: {
-                create: [
-                  { name: '性格弱点', sortOrder: 0 },
-                  { name: '不擅长的事', sortOrder: 1 },
-                ],
-              },
-            },
-            {
-              name: '专业技能',
-              description: '掌握的专业技能',
-              categories: {
-                create: [
-                  { name: '编程语言', sortOrder: 0 },
-                  { name: '开发框架', sortOrder: 1 },
-                  { name: '工具软件', sortOrder: 2 },
-                ],
-              },
-            },
-            {
-              name: '收藏夹',
-              description: '喜欢的内容收藏',
-              categories: {
-                create: [
-                  { name: '阅读', sortOrder: 0 },
-                  { name: '音乐', sortOrder: 1 },
-                  { name: '影视', sortOrder: 2 },
-                ],
-              },
-            },
-          ],
+          },
         },
-      },
+      });
+
+      const page = await tx.page.findFirst({ where: { userId: newUser.id } });
+
+      const 关键成分 = await tx.category.create({
+        data: { pageId: page!.id, name: '关键成分', sortOrder: 0 },
+      });
+
+      const 性格特点 = await tx.category.create({
+        data: { pageId: page!.id, name: '性格特点', sortOrder: 1 },
+      });
+      await tx.category.createMany({
+        data: [
+          { pageId: page!.id, parentId: 性格特点.id, name: '性格优点', sortOrder: 0 },
+          { pageId: page!.id, parentId: 性格特点.id, name: '性格缺点', sortOrder: 1 },
+        ],
+      });
+
+      const 兴趣爱好 = await tx.category.create({
+        data: { pageId: page!.id, name: '兴趣爱好', sortOrder: 2 },
+      });
+      await tx.category.createMany({
+        data: [
+          { pageId: page!.id, parentId: 兴趣爱好.id, name: '游戏', sortOrder: 0 },
+          { pageId: page!.id, parentId: 兴趣爱好.id, name: '动漫', sortOrder: 1 },
+          { pageId: page!.id, parentId: 兴趣爱好.id, name: '音乐', sortOrder: 2 },
+        ],
+      });
+
+      await tx.category.createMany({
+        data: [
+          { pageId: page!.id, name: '特长之处', sortOrder: 3 },
+          { pageId: page!.id, name: '联系方式', sortOrder: 4 },
+        ],
+      });
+
+      return newUser;
     });
 
     const token = generateToken(user.id);
