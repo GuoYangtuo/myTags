@@ -69,10 +69,6 @@ export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: 
     const finalConfidence = useConfidence ? confidence : NO_CONFIDENCE_VALUE;
     onAdd(value.trim(), selectedCatId, finalConfidence, confidenceLabel);
     setValue('');
-    setConfidence(100);
-    setConfidenceLabel('置信度');
-    setCustomLabel('');
-    setShowLabelDropdown(false);
   };
 
   const handleLabelSelect = (label: string) => {
