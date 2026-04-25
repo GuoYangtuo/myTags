@@ -5,6 +5,8 @@ import { getConfidenceColor, isNoConfidence, NO_CONFIDENCE_VALUE } from '../../u
 import { Edit2, Trash2, Link2, ExternalLink, X, ChevronDown, GripVertical } from 'lucide-react';
 import { Modal, Input, Button } from '../ui';
 
+const ENABLE_DRAG = false;
+
 const CONFIDENCE_LABEL_PRESETS = [
   '置信度',
   '熟练度',
@@ -99,15 +101,17 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging, dragHandleRef, dr
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {/* Mobile drag handle — only visible on small screens */}
-            <div
-              ref={dragHandleRef}
-              {...dragListeners}
-              className="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary/40 hover:text-text-secondary md:hidden"
-              data-tag-drag-handle
-              style={{ touchAction: 'none' }}
-            >
-              <GripVertical size={16} />
-            </div>
+            {ENABLE_DRAG && (
+              <div
+                ref={dragHandleRef}
+                {...dragListeners}
+                className="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary/40 hover:text-text-secondary md:hidden"
+                data-tag-drag-handle
+                style={{ touchAction: 'none' }}
+              >
+                <GripVertical size={16} />
+              </div>
+            )}
             <span className="text-left font-bold font-heading text-base min-w-0 truncate">{tag.name}</span>
             <button
               onClick={handleOpenEdit}

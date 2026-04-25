@@ -16,6 +16,8 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 
+const ENABLE_DRAG = false;
+
 interface CategoryTreeProps {
   categories: Category[];
   allCategories: Category[];
@@ -49,8 +51,8 @@ function SortableTagCardInner({ tag, onUpdate, onDelete, activeItemId }: {
     );
   }
 
-  const wrapperListeners = isMobile ? {} : listeners;
-  const cardListeners = isMobile ? listeners : {};
+  const wrapperListeners = ENABLE_DRAG ? (isMobile ? {} : listeners) : {};
+  const cardListeners = ENABLE_DRAG ? (isMobile ? listeners : {}) : {};
 
   const wrapperAttributes = { ...attributes, 'data-tag-card': `tag-${tag.id}` };
 
@@ -165,7 +167,7 @@ function SortableCategoryNodeInner({
               <span className="w-4 h-4 inline-block" />
             )}
           </button>
-          {isMobile && (
+          {ENABLE_DRAG && isMobile && (
             <button
               ref={catDragHandleRef}
               {...listeners}
@@ -227,7 +229,7 @@ function SortableCategoryNodeInner({
               onDoubleClick={() => { setIsEditing(true); }}
               title={category.description || category.name}
               {...attributes}
-              {...(isMobile ? {} : listeners)}
+              {...(ENABLE_DRAG ? (isMobile ? {} : listeners) : {})}
             >
               {category.name}
               <span className="ml-1 md:ml-2 text-xs font-normal text-text-secondary whitespace-nowrap">
