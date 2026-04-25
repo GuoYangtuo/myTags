@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { publicApi } from '../api/public';
 import type { ShareData, Category } from '../types';
 import { ChevronDown, ChevronRight, ExternalLink, Clock, User } from 'lucide-react';
-import { formatDate, getConfidenceColor, isNoConfidence } from '../utils/helpers';
+import { formatDate, isNoConfidence } from '../utils/helpers';
 import { TagDescriptionTooltip } from '../components/tag/TagDescriptionTooltip';
 
 function PublicCategory({ category, depth = 0 }: { category: Category; depth?: number }) {
@@ -39,16 +39,23 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {(category.tags ?? []).map((tag) => (
               <div key={tag.id} className="bg-bg-card rounded-xl border-2 border-border-strong p-4 group">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between gap-2">
                   <TagDescriptionTooltip tagName={tag.name} description={tag.description}>
-                    <span className="font-bold font-heading text-base cursor-help">{tag.name}</span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="font-bold font-heading text-base cursor-help truncate">{tag.name}</span>
+                      {!isNoConfidence(tag.confidence) && (
+                        <span className="text-xs text-text-secondary/60 flex-shrink-0">
+                          {tag.confidenceLabel} {tag.confidence}%
+                        </span>
+                      )}
+                    </div>
                   </TagDescriptionTooltip>
                   {tag.navUrl && (
                     <a
                       href={tag.navUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1 rounded text-accent-tertiary hover:bg-accent-tertiary/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="p-1 rounded text-accent-tertiary hover:bg-accent-tertiary/10 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                       title={`打开链接: ${tag.navUrl}`}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -56,28 +63,9 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
                     </a>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  {isNoConfidence(tag.confidence) ? (
-                    <p className="text-xs text-text-secondary/50 italic w-full py-1">不使用置信度</p>
-                  ) : (
-                    <>
-                      <div className="flex-1">
-                        <div className="h-2 bg-border-light rounded-full border border-border-strong overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{
-                              width: `${Math.max(0, Math.min(100, ((tag.confidence + 20) / 140) * 100))}%`,
-                              backgroundColor: getConfidenceColor(tag.confidence),
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <span className="font-mono font-bold text-sm" style={{ color: getConfidenceColor(tag.confidence) }}>
-                        {tag.confidence}%
-                      </span>
-                    </>
-                  )}
-                </div>
+                {isNoConfidence(tag.confidence) && (
+                  <p className="text-xs text-text-secondary/50 italic mt-2">不使用置信度</p>
+                )}
               </div>
             ))}
           </div>
