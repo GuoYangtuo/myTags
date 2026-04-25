@@ -1,39 +1,60 @@
 import { create } from 'zustand';
 import type { Page, Category, Tag } from '../types';
 import { pageApi } from '../api/pages';
-import { categoryApi } from '../api/categories';
-import { tagApi } from '../api/tags';
 
 interface PageState {
   pages: Page[];
   currentPage: Page | null;
   loadedPages: Record<number, Page>;
   loading: boolean;
+  saving: boolean;
+  isDirty: boolean;  // 是否有未保存的更改
+  nextId: number;    // 为新创建的分类/标签生成唯一 ID
+
   fetchPages: () => Promise<void>;
   fetchPage: (id: number) => Promise<void>;
   createPage: (name: string, description?: string) => Promise<Page>;
   updatePage: (id: number, data: { name?: string; description?: string }) => Promise<void>;
   deletePage: (id: number) => Promise<void>;
-  createCategory: (pageId: number, name: string, parentId?: number | null, description?: string, confidence?: number, confidenceLabel?: string) => Promise<Category>;
-  updateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => Promise<void>;
-  deleteCategory: (id: number) => Promise<void>;
-  reorderCategories: (items: { id: number; parentId: number | null; afterId: number | null }[]) => Promise<void>;
-  createTag: (pageId: number, categoryId: number, name: string, confidence?: number, description?: string, confidenceLabel?: string) => Promise<Tag>;
-  updateTag: (id: number, data: Partial<Pick<Tag, 'name' | 'description' | 'confidence' | 'confidenceLabel' | 'navUrl' | 'categoryId' | 'sortOrder'>>) => Promise<void>;
-  deleteTag: (id: number) => Promise<void>;
-  reorderTags: (items: { id: number; categoryId: number; afterId: number | null }[]) => Promise<void>;
-  addTagToPage: (tag: Tag) => void;
-  updateTagInPage: (tag: Tag) => void;
-  removeTagFromPage: (tagId: number) => void;
   setCurrentPage: (page: Page | null) => void;
   isPageLoaded: (id: number) => boolean;
+
+  // 保存页面内容（手动保存）
+  saveContent: () => Promise<void>;
+  markDirty: () => void;
+
+  // 分类操作
+  createCategory: (parentId: number | null, name: string, description?: string, confidence?: number, confidenceLabel?: string) => void;
+  updateCategory: (id: number, data: { name?: string; description?: string; confidence?: number; confidenceLabel?: string }) => void;
+  deleteCategory: (id: number) => void;
+  moveCategory: (categoryId: number, newParentId: number | null) => void;
+
+  // 标签操作
+  createTag: (categoryId: number, name: string, confidence?: number, description?: string, confidenceLabel?: string) => void;
+  updateTag: (id: number, data: { name?: string; description?: string; confidence?: number; confidenceLabel?: string; navUrl?: string | null }) => void;
+  deleteTag: (id: number) => void;
+  moveTag: (tagId: number, targetCategoryId: number) => void;
+
+  // 拖拽排序
+  reorderTags: (categoryId: number, tagIds: number[]) => void;
+  reorderCategories: (parentId: number | null, categoryIds: number[]) => void;
 }
+
+// 生成唯一 ID（用于本地新建的分类和标签）
+let idCounter = 100000;
+const generateId = () => {
+  idCounter -= 1;
+  return idCounter;
+};
 
 export const usePageStore = create<PageState>((set, get) => ({
   pages: [],
   currentPage: null,
   loadedPages: {},
   loading: false,
+  saving: false,
+  isDirty: false,
+  nextId: generateId(),
 
   fetchPages: async () => {
     set({ loading: true });
@@ -53,6 +74,7 @@ export const usePageStore = create<PageState>((set, get) => ({
         currentPage: page,
         loadedPages: { ...state.loadedPages, [id]: page },
         loading: false,
+        isDirty: false,
       }));
     } catch {
       set({ loading: false });
@@ -88,200 +110,350 @@ export const usePageStore = create<PageState>((set, get) => ({
     });
   },
 
-  createCategory: async (pageId, name, parentId, description, confidence, confidenceLabel) => {
-    const category = await categoryApi.create({ pageId, name, parentId, description, confidence, confidenceLabel });
-    const state = get();
-    if (state.currentPage && state.currentPage.id === pageId) {
-      const cats = state.currentPage.categories ?? [];
-      const addToTree = (cats: Category[]): Category[] => {
-        return cats.map((c) => {
-          if (c.id === category.parentId) {
-            return { ...c, children: [...(c.children ?? []), category] };
-          }
-          return { ...c, children: addToTree(c.children ?? []) };
-        });
-      };
-      const newPage = category.parentId === null
-        ? { ...state.currentPage, categories: [...cats, { ...category, children: [], tags: [] }] }
-        : { ...state.currentPage, categories: addToTree(cats) };
-      set({ currentPage: newPage, loadedPages: { ...state.loadedPages, [pageId]: newPage } });
-    }
-    return category;
-  },
-
-  updateCategory: async (id, data) => {
-    const cat = await categoryApi.update(id, data);
-    set((state) => {
-      if (!state.currentPage) return state;
-      const cats = state.currentPage.categories ?? [];
-      const updateInTree = (cats: Category[]): Category[] => {
-        return cats.map((c) => (c.id === id ? { ...c, ...cat } : { ...c, children: updateInTree(c.children ?? []) }));
-      };
-      const newPage = { ...state.currentPage, categories: updateInTree(cats) };
-      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
-    });
-  },
-
-  deleteCategory: async (id) => {
-    await categoryApi.delete(id);
-    set((state) => {
-      if (!state.currentPage) return state;
-      const cats = state.currentPage.categories ?? [];
-      const removeFromTree = (cats: Category[]): Category[] =>
-        cats
-          .filter((c) => c.id !== id)
-          .map((c) => ({ ...c, children: removeFromTree(c.children ?? []) }));
-      const newPage = { ...state.currentPage, categories: removeFromTree(cats) };
-      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
-    });
-  },
-
-  reorderCategories: async (items) => {
-    const result = await categoryApi.reorder(items);
-    if (!result.categories) return;
-    set((state) => {
-      if (!state.currentPage) return state;
-      const cats = state.currentPage.categories ?? [];
-
-      const flatten = (list: Category[]): Category[] => {
-        const flat: Category[] = [];
-        for (const c of list) {
-          flat.push(c);
-          flat.push(...flatten(c.children ?? []));
-        }
-        return flat;
-      };
-
-      let flat = flatten(cats);
-      flat = flat.map((c) => {
-        const upd = result.categories.find((u) => u.id === c.id);
-        return upd ? { ...c, parentId: upd.parentId, sortOrder: upd.sortOrder } : c;
-      });
-
-      const rootCats = flat.filter((c) => c.parentId === null).sort((a, b) => a.sortOrder - b.sortOrder);
-      const buildTree = (parentId: number | null): Category[] => {
-        const children = flat
-          .filter((c) => c.parentId === parentId)
-          .sort((a, b) => a.sortOrder - b.sortOrder)
-          .map((c) => ({ ...c, children: buildTree(c.id) }));
-        return children;
-      };
-
-      const newPage = { ...state.currentPage, categories: buildTree(null) };
-      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
-    });
-  },
-
-  createTag: async (pageId, categoryId, name, confidence = 50, description?, confidenceLabel?) => {
-    const tag = await tagApi.create({ pageId, categoryId, name, confidence, description, confidenceLabel });
-    get().addTagToPage(tag);
-    return tag;
-  },
-
-  updateTag: async (id, data) => {
-    const tag = await tagApi.update(id, data);
-    get().updateTagInPage(tag);
-  },
-
-  deleteTag: async (id) => {
-    await tagApi.delete(id);
-    get().removeTagFromPage(id);
-  },
-
-  reorderTags: async (items) => {
-    const result = await tagApi.reorder(items);
-    if (!result.tags) return;
-    set((state) => {
-      if (!state.currentPage) return state;
-      const cats = state.currentPage.categories ?? [];
-
-      const collectTags = (list: Category[]): Tag[] => {
-        const tags: Tag[] = [];
-        for (const c of list) {
-          tags.push(...(c.tags ?? []));
-          tags.push(...collectTags(c.children ?? []));
-        }
-        return tags;
-      };
-
-      let allTags = collectTags(cats);
-      allTags = allTags.map((t) => {
-        const upd = result.tags.find((u) => u.id === t.id);
-        return upd ? { ...t, categoryId: upd.categoryId, sortOrder: upd.sortOrder } : t;
-      });
-
-      const addToTree = (list: Category[]): Category[] =>
-        list.map((c) => {
-          const catTags = allTags.filter((t) => t.categoryId === c.id);
-          allTags = allTags.filter((t) => t.categoryId !== c.id);
-          return {
-            ...c,
-            tags: catTags.sort((a, b) => a.sortOrder - b.sortOrder),
-            children: addToTree(c.children ?? []),
-          };
-        });
-
-      const newCats = addToTree(cats);
-      const newPage = { ...state.currentPage, categories: newCats };
-      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
-    });
-  },
-
-  addTagToPage: (tag) => {
-    set((state) => {
-      if (!state.currentPage) return state;
-      const cats = state.currentPage.categories ?? [];
-      const addToTree = (cats: Category[]): Category[] =>
-        cats.map((c) => {
-          if (c.id === tag.categoryId) return { ...c, tags: [...(c.tags ?? []), tag] };
-          return { ...c, children: addToTree(c.children ?? []) };
-        });
-      const newPage = { ...state.currentPage, categories: addToTree(cats) };
-      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
-    });
-  },
-
-  updateTagInPage: (tag) => {
-    set((state) => {
-      if (!state.currentPage) return state;
-      const cats = state.currentPage.categories ?? [];
-      const updateInTree = (cats: Category[]): Category[] =>
-        cats.map((c) => ({
-          ...c,
-          tags: (c.tags ?? []).map((t) => (t.id === tag.id ? { ...t, ...tag } : t)),
-          children: updateInTree(c.children ?? []),
-        }));
-      const newPage = { ...state.currentPage, categories: updateInTree(cats) };
-      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
-    });
-  },
-
-  removeTagFromPage: (tagId) => {
-    set((state) => {
-      if (!state.currentPage) return state;
-      const cats = state.currentPage.categories ?? [];
-      const removeFromTree = (cats: Category[]): Category[] =>
-        cats.map((c) => ({
-          ...c,
-          tags: (c.tags ?? []).filter((t) => t.id !== tagId),
-          children: removeFromTree(c.children ?? []),
-        }));
-      const newPage = { ...state.currentPage, categories: removeFromTree(cats) };
-      return { currentPage: newPage, loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage } };
-    });
-  },
-
   setCurrentPage: (page) => {
     if (!page) {
-      set({ currentPage: null });
+      set({ currentPage: null, isDirty: false });
       return;
     }
     const state = get();
     const fullPage = state.loadedPages[page.id];
-    set({ currentPage: fullPage ?? page });
+    set({ currentPage: fullPage ?? page, isDirty: false });
   },
 
   isPageLoaded: (id: number) => {
     return !!get().loadedPages[id];
+  },
+
+  saveContent: async () => {
+    const { currentPage } = get();
+    if (!currentPage) return;
+
+    set({ saving: true });
+    try {
+      const content = { categories: currentPage.categories };
+      const updated = await pageApi.saveContent(currentPage.id, content);
+      set((state) => ({
+        currentPage: updated,
+        loadedPages: { ...state.loadedPages, [currentPage.id]: updated },
+        saving: false,
+        isDirty: false,
+      }));
+    } catch {
+      set({ saving: false });
+      throw new Error('保存失败');
+    }
+  },
+
+  markDirty: () => {
+    set({ isDirty: true });
+  },
+
+  // ==================== 分类操作 ====================
+
+  createCategory: (parentId, name, description = '', confidence = 50, confidenceLabel = '置信度') => {
+    const newCategory: Category = {
+      id: generateId(),
+      name,
+      description,
+      confidence,
+      confidenceLabel,
+      children: [],
+      tags: [],
+    };
+
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      const addToTree = (cats: Category[]): Category[] => {
+        return cats.map((c) => {
+          if (c.id === parentId) {
+            return { ...c, children: [...c.children, newCategory] };
+          }
+          return { ...c, children: addToTree(c.children) };
+        });
+      };
+
+      const newCategories = parentId === null
+        ? [...state.currentPage.categories, newCategory]
+        : addToTree(state.currentPage.categories);
+
+      const newPage = { ...state.currentPage, categories: newCategories };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  updateCategory: (id, data) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      const updateInTree = (cats: Category[]): Category[] => {
+        return cats.map((c) => {
+          if (c.id === id) {
+            return { ...c, ...data };
+          }
+          return { ...c, children: updateInTree(c.children) };
+        });
+      };
+
+      const newPage = { ...state.currentPage, categories: updateInTree(state.currentPage.categories) };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  deleteCategory: (id) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      const removeFromTree = (cats: Category[]): Category[] =>
+        cats
+          .filter((c) => c.id !== id)
+          .map((c) => ({ ...c, children: removeFromTree(c.children) }));
+
+      const newPage = { ...state.currentPage, categories: removeFromTree(state.currentPage.categories) };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  moveCategory: (categoryId, newParentId) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      // 找到要移动的分类
+      let movedCategory: Category | null = null;
+      const findAndRemove = (cats: Category[]): Category[] => {
+        return cats.filter((c) => {
+          if (c.id === categoryId) {
+            movedCategory = c;
+            return false;
+          }
+          c.children = findAndRemove(c.children);
+          return true;
+        });
+      };
+
+      let cats = findAndRemove([...state.currentPage.categories]);
+      if (!movedCategory) return state;
+
+      // 添加到新位置
+      if (newParentId === null) {
+        cats.push(movedCategory);
+      } else {
+        const addToParent = (cats: Category[]): Category[] => {
+          return cats.map((c) => {
+            if (c.id === newParentId) {
+              return { ...c, children: [...c.children, movedCategory!] };
+            }
+            return { ...c, children: addToParent(c.children) };
+          });
+        };
+        cats = addToParent(cats);
+      }
+
+      const newPage = { ...state.currentPage, categories: cats };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  // ==================== 标签操作 ====================
+
+  createTag: (categoryId, name, confidence = 50, description = '', confidenceLabel = '置信度') => {
+    const newTag: Tag = {
+      id: generateId(),
+      name,
+      description,
+      confidence,
+      confidenceLabel,
+      navUrl: null,
+    };
+
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      const addToTree = (cats: Category[]): Category[] => {
+        return cats.map((c) => {
+          if (c.id === categoryId) {
+            return { ...c, tags: [...c.tags, newTag] };
+          }
+          return { ...c, children: addToTree(c.children) };
+        });
+      };
+
+      const newPage = { ...state.currentPage, categories: addToTree(state.currentPage.categories) };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  updateTag: (id, data) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      const updateInTree = (cats: Category[]): Category[] => {
+        return cats.map((c) => ({
+          ...c,
+          tags: c.tags.map((t) => (t.id === id ? { ...t, ...data } : t)),
+          children: updateInTree(c.children),
+        }));
+      };
+
+      const newPage = { ...state.currentPage, categories: updateInTree(state.currentPage.categories) };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  deleteTag: (id) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      const removeFromTree = (cats: Category[]): Category[] => {
+        return cats.map((c) => ({
+          ...c,
+          tags: c.tags.filter((t) => t.id !== id),
+          children: removeFromTree(c.children),
+        }));
+      };
+
+      const newPage = { ...state.currentPage, categories: removeFromTree(state.currentPage.categories) };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  moveTag: (tagId, targetCategoryId) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      let movedTag: Tag | null = null;
+      const cats = state.currentPage.categories;
+
+      // 从树中移除标签
+      const removeTag = (categories: Category[]): Category[] => {
+        return categories.map((c) => ({
+          ...c,
+          tags: c.tags.filter((t) => {
+            if (t.id === tagId) {
+              movedTag = t;
+              return false;
+            }
+            return true;
+          }),
+          children: removeTag(c.children),
+        }));
+      };
+
+      // 添加标签到目标分类
+      const addTag = (categories: Category[]): Category[] => {
+        return categories.map((c) => {
+          if (c.id === targetCategoryId && movedTag) {
+            return { ...c, tags: [...c.tags, movedTag] };
+          }
+          return { ...c, children: addTag(c.children) };
+        });
+      };
+
+      let newCats = removeTag(cats);
+      if (movedTag) {
+        newCats = addTag(newCats);
+      }
+
+      const newPage = { ...state.currentPage, categories: newCats };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  // ==================== 拖拽排序 ====================
+
+  reorderTags: (categoryId, tagIds) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      const reorderInTree = (cats: Category[]): Category[] => {
+        return cats.map((c) => {
+          if (c.id === categoryId) {
+            const tagMap = new Map(c.tags.map((t) => [t.id, t]));
+            const reorderedTags = tagIds.map((id) => tagMap.get(id)!).filter(Boolean);
+            return { ...c, tags: reorderedTags };
+          }
+          return { ...c, children: reorderInTree(c.children) };
+        });
+      };
+
+      const newPage = { ...state.currentPage, categories: reorderInTree(state.currentPage.categories) };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
+  reorderCategories: (parentId, categoryIds) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      const reorderInTree = (cats: Category[]): Category[] => {
+        return cats.map((c) => ({
+          ...c,
+          children: reorderInTree(c.children),
+        }));
+      };
+
+      const reorderAtLevel = (cats: Category[], targetParentId: number | null): Category[] => {
+        if (targetParentId === null) {
+          const catMap = new Map(cats.map((c) => [c.id, c]));
+          const reordered = categoryIds.map((id) => catMap.get(id)!).filter(Boolean);
+          return reordered.map((c) => ({ ...c, children: reorderInTree(c.children) }));
+        }
+
+        return cats.map((c) => {
+          if (c.id === targetParentId) {
+            const catMap = new Map(c.children.map((child) => [child.id, child]));
+            const reorderedChildren = categoryIds.map((id) => catMap.get(id)!).filter(Boolean);
+            return {
+              ...c,
+              children: reorderedChildren.map((child) => ({ ...child, children: reorderInTree(child.children) })),
+            };
+          }
+          return { ...c, children: reorderAtLevel(c.children, targetParentId) };
+        });
+      };
+
+      const newPage = { ...state.currentPage, categories: reorderAtLevel(state.currentPage.categories, parentId) };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
   },
 }));

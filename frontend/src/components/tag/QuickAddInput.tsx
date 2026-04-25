@@ -17,14 +17,13 @@ const CONFIDENCE_LABEL_PRESETS = [
 
 interface QuickAddInputProps {
   categories: Category[];
-  pageId: number;
   onAdd: (name: string, categoryId: number, confidence?: number, confidenceLabel?: string) => void;
   currentCategoryId?: number;
 }
 
 interface FlatCat { cat: Category; depth: number }
 
-export function QuickAddInput({ categories, pageId, onAdd, currentCategoryId }: QuickAddInputProps) {
+export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAddInputProps) {
   const [value, setValue] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<number | null>(currentCategoryId || null);
   const [showDropdown, setShowDropdown] = useState(false);

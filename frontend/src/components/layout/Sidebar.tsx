@@ -81,14 +81,7 @@ export function Sidebar() {
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <>
-                  <span className="flex-1 font-medium text-sm truncate">{page.name}</span>
-                  {page._count && (
-                    <span className={`group-hover:hidden text-xs px-1.5 py-0.5 rounded-full ${currentPage?.id === page.id ? 'bg-white/20' : 'bg-bg-secondary'}`}>
-                      {page._count.tags}
-                    </span>
-                  )}
-                </>
+                <span className="flex-1 font-medium text-sm truncate">{page.name}</span>
               )}
 
               <div className={`absolute right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ${editingId === page.id ? 'hidden' : ''}`}>

@@ -3,6 +3,29 @@ import { prisma } from '../index.js';
 
 const router = Router();
 
+interface PageContent {
+  categories: CategoryData[];
+}
+
+interface CategoryData {
+  id: number;
+  name: string;
+  description: string;
+  confidence: number;
+  confidenceLabel: string;
+  children: CategoryData[];
+  tags: TagData[];
+}
+
+interface TagData {
+  id: number;
+  name: string;
+  description: string;
+  confidence: number;
+  confidenceLabel: string;
+  navUrl: string | null;
+}
+
 router.get('/user/:username', async (req: Request, res: Response) => {
   try {
     const nickname = decodeURIComponent(req.params.username as string);
@@ -36,37 +59,6 @@ router.get('/share/:code', async (req: Request, res: Response) => {
         page: {
           include: {
             user: { select: { nickname: true, avatarSeed: true } },
-            categories: {
-              orderBy: { sortOrder: 'asc' },
-              where: { parentId: null },
-              include: {
-                tags: { orderBy: { sortOrder: 'asc' } },
-                children: {
-                  orderBy: { sortOrder: 'asc' },
-                  include: {
-                    tags: { orderBy: { sortOrder: 'asc' } },
-                    children: {
-                      orderBy: { sortOrder: 'asc' },
-                      include: {
-                        tags: { orderBy: { sortOrder: 'asc' } },
-                        children: {
-                          orderBy: { sortOrder: 'asc' },
-                          include: {
-                            tags: { orderBy: { sortOrder: 'asc' } },
-                            children: {
-                              orderBy: { sortOrder: 'asc' },
-                              include: {
-                                tags: { orderBy: { sortOrder: 'asc' } },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
           },
         },
       },
@@ -82,26 +74,21 @@ router.get('/share/:code', async (req: Request, res: Response) => {
       return;
     }
 
-    let visibleCategoryIds: number[] | null = null;
-    if (share.visibleItems) {
-      visibleCategoryIds = JSON.parse(share.visibleItems) as number[];
+    // 解析 content JSON
+    let pageContent: PageContent = { categories: [] };
+    try {
+      pageContent = JSON.parse(share.page.content);
+    } catch {
+      pageContent = { categories: [] };
     }
-
-    const filterCategories = (cats: any[]): any[] => {
-      return cats
-        .filter((cat) => visibleCategoryIds === null || visibleCategoryIds.includes(cat.id))
-        .map((cat) => ({
-          ...cat,
-          children: filterCategories(cat.children || []),
-        }));
-    };
-
-    const filteredCategories = filterCategories(share.page.categories);
 
     res.json({
       page: {
-        ...share.page,
-        categories: filteredCategories,
+        id: share.page.id,
+        name: share.page.name,
+        description: share.page.description,
+        categories: pageContent.categories,
+        user: share.page.user,
       },
       expiresAt: share.expiresAt,
     });
@@ -118,37 +105,6 @@ router.get('/page/:pageId', async (req: Request, res: Response) => {
       where: { id: pageId },
       include: {
         user: { select: { nickname: true, avatarSeed: true } },
-        categories: {
-          orderBy: { sortOrder: 'asc' },
-          where: { parentId: null },
-          include: {
-            tags: { orderBy: { sortOrder: 'asc' } },
-            children: {
-              orderBy: { sortOrder: 'asc' },
-              include: {
-                tags: { orderBy: { sortOrder: 'asc' } },
-                children: {
-                  orderBy: { sortOrder: 'asc' },
-                  include: {
-                    tags: { orderBy: { sortOrder: 'asc' } },
-                    children: {
-                      orderBy: { sortOrder: 'asc' },
-                      include: {
-                        tags: { orderBy: { sortOrder: 'asc' } },
-                        children: {
-                          orderBy: { sortOrder: 'asc' },
-                          include: {
-                            tags: { orderBy: { sortOrder: 'asc' } },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
       },
     });
 
@@ -157,7 +113,21 @@ router.get('/page/:pageId', async (req: Request, res: Response) => {
       return;
     }
 
-    res.json(page);
+    // 解析 content JSON
+    let pageContent: PageContent = { categories: [] };
+    try {
+      pageContent = JSON.parse(page.content);
+    } catch {
+      pageContent = { categories: [] };
+    }
+
+    res.json({
+      id: page.id,
+      name: page.name,
+      description: page.description,
+      categories: pageContent.categories,
+      user: page.user,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

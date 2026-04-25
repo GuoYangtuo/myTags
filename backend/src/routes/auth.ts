@@ -18,6 +18,104 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
+// 初始页面内容模板
+const createInitialContent = () => ({
+  categories: [
+    {
+      id: 1,
+      name: '关键成分',
+      description: '',
+      confidence: 50,
+      confidenceLabel: '置信度',
+      children: [],
+      tags: [],
+    },
+    {
+      id: 2,
+      name: '性格特点',
+      description: '',
+      confidence: 50,
+      confidenceLabel: '置信度',
+      children: [
+        {
+          id: 3,
+          name: '性格优点',
+          description: '',
+          confidence: 50,
+          confidenceLabel: '置信度',
+          children: [],
+          tags: [],
+        },
+        {
+          id: 4,
+          name: '性格缺点',
+          description: '',
+          confidence: 50,
+          confidenceLabel: '置信度',
+          children: [],
+          tags: [],
+        },
+      ],
+      tags: [],
+    },
+    {
+      id: 5,
+      name: '兴趣爱好',
+      description: '',
+      confidence: 50,
+      confidenceLabel: '置信度',
+      children: [
+        {
+          id: 6,
+          name: '游戏',
+          description: '',
+          confidence: 50,
+          confidenceLabel: '置信度',
+          children: [],
+          tags: [],
+        },
+        {
+          id: 7,
+          name: '动漫',
+          description: '',
+          confidence: 50,
+          confidenceLabel: '置信度',
+          children: [],
+          tags: [],
+        },
+        {
+          id: 8,
+          name: '音乐',
+          description: '',
+          confidence: 50,
+          confidenceLabel: '置信度',
+          children: [],
+          tags: [],
+        },
+      ],
+      tags: [],
+    },
+    {
+      id: 9,
+      name: '特长之处',
+      description: '',
+      confidence: 50,
+      confidenceLabel: '置信度',
+      children: [],
+      tags: [],
+    },
+    {
+      id: 10,
+      name: '联系方式',
+      description: '',
+      confidence: 50,
+      confidenceLabel: '置信度',
+      children: [],
+      tags: [],
+    },
+  ],
+});
+
 router.post('/register', async (req, res) => {
   try {
     const data = registerSchema.parse(req.body);
@@ -31,56 +129,19 @@ router.post('/register', async (req, res) => {
     const password = await bcrypt.hash(data.password, 10);
     const avatarSeed = Math.random().toString(36).substring(2, 10);
 
-    const user = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          email: data.email,
-          password,
-          nickname: data.nickname || data.email.split('@')[0],
-          avatarSeed,
-          pages: {
-            create: {
-              name: '个人主页',
-            },
+    const user = await prisma.user.create({
+      data: {
+        email: data.email,
+        password,
+        nickname: data.nickname || data.email.split('@')[0],
+        avatarSeed,
+        pages: {
+          create: {
+            name: '个人主页',
+            content: JSON.stringify(createInitialContent()),
           },
         },
-      });
-
-      const page = await tx.page.findFirst({ where: { userId: newUser.id } });
-
-      const 关键成分 = await tx.category.create({
-        data: { pageId: page!.id, name: '关键成分', sortOrder: 0 },
-      });
-
-      const 性格特点 = await tx.category.create({
-        data: { pageId: page!.id, name: '性格特点', sortOrder: 1 },
-      });
-      await tx.category.createMany({
-        data: [
-          { pageId: page!.id, parentId: 性格特点.id, name: '性格优点', sortOrder: 0 },
-          { pageId: page!.id, parentId: 性格特点.id, name: '性格缺点', sortOrder: 1 },
-        ],
-      });
-
-      const 兴趣爱好 = await tx.category.create({
-        data: { pageId: page!.id, name: '兴趣爱好', sortOrder: 2 },
-      });
-      await tx.category.createMany({
-        data: [
-          { pageId: page!.id, parentId: 兴趣爱好.id, name: '游戏', sortOrder: 0 },
-          { pageId: page!.id, parentId: 兴趣爱好.id, name: '动漫', sortOrder: 1 },
-          { pageId: page!.id, parentId: 兴趣爱好.id, name: '音乐', sortOrder: 2 },
-        ],
-      });
-
-      await tx.category.createMany({
-        data: [
-          { pageId: page!.id, name: '特长之处', sortOrder: 3 },
-          { pageId: page!.id, name: '联系方式', sortOrder: 4 },
-        ],
-      });
-
-      return newUser;
+      },
     });
 
     const token = generateToken(user.id);

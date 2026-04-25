@@ -13,7 +13,6 @@ import {
   useSensors,
   PointerSensor,
   type DragStartEvent,
-  type DragOverEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
 
@@ -23,21 +22,20 @@ interface CategoryTreeProps {
   onUpdateTag: (tagId: number, data: Partial<Tag>) => void;
   onDeleteTag: (tagId: number) => void;
   onAddTag: (name: string, categoryId: number, confidence?: number, confidenceLabel?: string) => void;
-  onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => void;
+  onUpdateCategory: (id: number, data: { name?: string; description?: string; confidence?: number; confidenceLabel?: string }) => void;
   onDeleteCategory: (id: number) => void;
-  onCreateCategory: (name: string, parentId?: number | null) => void;
-  onReorderTags: (items: { id: number; categoryId: number; afterId: number | null }[]) => void;
-  onReorderCategories: (items: { id: number; parentId: number | null; afterId: number | null }[]) => void;
+  onCreateCategory: (name: string, parentId: number | null) => void;
+  onReorderTags: (categoryId: number, tagIds: number[]) => void;
+  onReorderCategories: (parentId: number | null, categoryIds: number[]) => void;
   onMoveTag: (tagId: number, targetCategoryId: number) => void;
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
 }
 
-function SortableTagCardInner({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
+function SortableTagCardInner({ tag, onUpdate, onDelete, activeItemId }: {
   tag: Tag;
   onUpdate: (d: Partial<Tag>) => void;
   onDelete: () => void;
   activeItemId: string | null;
-  overInfo: { id: string; side: 'left' | 'right' | 'top' | 'bottom' | 'child' } | null;
 }) {
   const { attributes, listeners, setNodeRef } = useSortable({ id: `tag-${tag.id}` });
   const isThisDragging = activeItemId === `tag-${tag.id}`;
@@ -79,7 +77,6 @@ const SortableTagCard = memo(SortableTagCardInner);
 function SortableCategoryNodeInner({
   category,
   depth,
-  allCategories,
   onUpdateTag,
   onDeleteTag,
   onAddTag,
@@ -91,7 +88,6 @@ function SortableCategoryNodeInner({
   onMoveTag,
   onMoveCategory,
   activeItemId,
-  overInfo,
 }: {
   category: Category;
   depth: number;
@@ -99,15 +95,14 @@ function SortableCategoryNodeInner({
   onUpdateTag: (tagId: number, data: Partial<Tag>) => void;
   onDeleteTag: (tagId: number) => void;
   onAddTag: (name: string, categoryId: number, confidence?: number, confidenceLabel?: string) => void;
-  onUpdateCategory: (id: number, data: { name?: string; parentId?: number | null; description?: string; confidence?: number; confidenceLabel?: string }) => void;
+  onUpdateCategory: (id: number, data: { name?: string; description?: string; confidence?: number; confidenceLabel?: string }) => void;
   onDeleteCategory: (id: number) => void;
-  onCreateCategory: (name: string, parentId?: number | null) => void;
-  onReorderTags: (items: { id: number; categoryId: number; afterId: number | null }[]) => void;
-  onReorderCategories: (items: { id: number; parentId: number | null; afterId: number | null }[]) => void;
+  onCreateCategory: (name: string, parentId: number | null) => void;
+  onReorderTags: (categoryId: number, tagIds: number[]) => void;
+  onReorderCategories: (parentId: number | null, categoryIds: number[]) => void;
   onMoveTag: (tagId: number, targetCategoryId: number) => void;
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
   activeItemId: string | null;
-  overInfo: { id: string; side: 'left' | 'right' | 'top' | 'bottom' | 'child' } | null;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -121,7 +116,6 @@ function SortableCategoryNodeInner({
   const [newTagName, setNewTagName] = useState('');
   const [newTagConfidence, setNewTagConfidence] = useState(50);
   const [newTagConfidenceLabel, setNewTagConfidenceLabel] = useState('置信度');
-  const [dragOver, setDragOver] = useState(false);
 
   const { setNodeRef: setDropRef } = useDroppable({ id: `cat-drop-${category.id}` });
   const { attributes, listeners, setNodeRef: setDragRef } = useSortable({ id: `cat-${category.id}` });
@@ -130,7 +124,6 @@ function SortableCategoryNodeInner({
   const isMobile = window.matchMedia?.('(max-width: 767px)').matches ?? false;
 
   const isThisDragging = activeItemId === `cat-${category.id}`;
-  const isThisOver = overInfo?.id === `cat-${category.id}`;
 
   const handleChildSubmit = () => {
     if (!newChildName.trim()) return;
@@ -152,7 +145,7 @@ function SortableCategoryNodeInner({
   return (
     <div
       ref={setDropRef}
-      className={`${category.parentId === null ? '' : 'ml-2 sm:ml-4 pl-2 sm:pl-4 border-l-2 border-border-light'} mb-3`}
+      className={`${depth === 0 ? '' : 'ml-2 sm:ml-4 pl-2 sm:pl-4 border-l-2 border-border-light'} mb-3`}
     >
       {isThisDragging ? (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-accent-primary/40 bg-accent-primary/5 mb-2 opacity-50" style={{ minHeight: 52 }} />
@@ -160,23 +153,8 @@ function SortableCategoryNodeInner({
         <div
           ref={setDragRef}
           data-cat-bar={`cat-bar-${category.id}`}
-          className={`relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/70 group transition-all duration-150 mb-2 ${
-            dragOver ? 'ring-2 ring-accent-primary ring-offset-2 bg-accent-primary/5' : ''
-          } ${isThisOver ? 'opacity-20' : ''}`}
+          className={`relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/70 group transition-all duration-150 mb-2`}
         >
-          {/* Drop position overlay for categories */}
-          {isThisOver && activeItemId?.startsWith('cat-') && (
-            <div className="absolute inset-0 flex z-[60] pointer-events-none rounded-xl overflow-hidden">
-              {overInfo?.side === 'top' && <div className="absolute top-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary text-black text-sm font-bold shadow-lg">放在上方</div></div>}
-              {overInfo?.side === 'bottom' && <div className="absolute bottom-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary text-black text-sm font-bold shadow-lg">放在下方</div></div>}
-              {overInfo?.side === 'child' && <div className="absolute inset-0 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary text-black text-sm font-bold shadow-lg">设为子类</div></div>}
-            </div>
-          )}
-          {isThisOver && activeItemId?.startsWith('tag-') && (category.tags ?? []).length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center z-[60] pointer-events-none rounded-xl">
-              <div className="px-3 py-1 rounded-xl bg-accent-primary text-black text-sm font-bold shadow-lg">放入此分类</div>
-            </div>
-          )}
           <button
             onClick={() => setExpanded(!expanded)}
             className="p-0.5 rounded hover:bg-bg-secondary transition-colors"
@@ -187,7 +165,6 @@ function SortableCategoryNodeInner({
               <span className="w-4 h-4 inline-block" />
             )}
           </button>
-          {/* Mobile drag handle for category bar */}
           {isMobile && (
             <button
               ref={catDragHandleRef}
@@ -259,7 +236,6 @@ function SortableCategoryNodeInner({
             </button>
           )}
 
-          {/* Mobile: always show action buttons, Desktop: show on hover */}
           <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <button onClick={() => setShowAddChild(true)} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors" title="添加子分类">
               <FolderPlus size={14} className="text-accent-secondary" />
@@ -328,7 +304,7 @@ function SortableCategoryNodeInner({
       )}
 
       {expanded && (
-        <div className={`ml-2 ${dragOver ? 'ring-1 ring-accent-primary ring-dashed rounded-lg p-2' : ''}`}>
+        <div className="ml-2">
             <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {(category.tags ?? []).map((tag) => (
                 <SortableTagCard
@@ -337,7 +313,6 @@ function SortableCategoryNodeInner({
                   onUpdate={(data) => onUpdateTag(tag.id, data)}
                   onDelete={() => onDeleteTag(tag.id)}
                   activeItemId={activeItemId}
-                  overInfo={overInfo}
                 />
               ))}
             </div>
@@ -360,7 +335,7 @@ function SortableCategoryNodeInner({
               key={child.id}
               category={child}
               depth={depth + 1}
-              allCategories={allCategories}
+              allCategories={[]}
               onUpdateTag={onUpdateTag}
               onDeleteTag={onDeleteTag}
               onAddTag={onAddTag}
@@ -372,7 +347,6 @@ function SortableCategoryNodeInner({
               onMoveTag={onMoveTag}
               onMoveCategory={onMoveCategory}
               activeItemId={activeItemId}
-              overInfo={overInfo}
             />
           ))}
         </div>
@@ -382,6 +356,44 @@ function SortableCategoryNodeInner({
 }
 
 const SortableCategoryNode = memo(SortableCategoryNodeInner);
+
+// 辅助函数：查找标签所在的分类ID
+function findTagCategory(categories: Category[], tagId: number): number | null {
+  for (const cat of categories) {
+    if (cat.tags?.some(t => t.id === tagId)) {
+      return cat.id;
+    }
+    const found = findTagCategory(cat.children ?? [], tagId);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+// 辅助函数：获取某分类下所有标签ID
+function getTagIds(category: Category): number[] {
+  return (category.tags ?? []).map(t => t.id);
+}
+
+// 辅助函数：查找分类的父分类ID
+function findCategoryParent(categories: Category[], catId: number): number | null {
+  for (const cat of categories) {
+    if (cat.children?.some(c => c.id === catId)) {
+      return cat.id;
+    }
+    const found = findCategoryParent(cat.children ?? [], catId);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+// 辅助函数：获取同级分类的ID列表
+function getSiblingCategoryIds(categories: Category[], parentId: number | null): number[] {
+  if (parentId === null) {
+    return categories.map(c => c.id);
+  }
+  const parent = categories.find(c => c.id === parentId);
+  return (parent?.children ?? []).map(c => c.id);
+}
 
 export function CategoryTree({
   categories,
@@ -400,72 +412,6 @@ export function CategoryTree({
   const [showAddRoot, setShowAddRoot] = useState(false);
   const [newRootName, setNewRootName] = useState('');
   const [activeItem, setActiveItem] = useState<{ id: string; type: 'tag' | 'category'; data: Tag | Category } | null>(null);
-  const [overInfo, setOverInfo] = useState<{ id: string; side: 'left' | 'right' | 'top' | 'bottom' | 'child'; targetRect?: DOMRect } | null>(null);
-  const activeItemRef = React.useRef(activeItem);
-  const overInfoRef = React.useRef(overInfo);
-  const allCategoriesRef = React.useRef(allCategories);
-  activeItemRef.current = activeItem;
-  overInfoRef.current = overInfo;
-  allCategoriesRef.current = allCategories;
-  const pointerRef = React.useRef({ x: 0, y: 0 });
-
-  // 缓存分类和标签的扁平化查找表，避免频繁遍历
-  const lookupCache = useMemo(() => {
-    const tagMap = new Map<number, Tag>();
-    const catMap = new Map<number, Category>();
-    const catTagMap = new Map<number, Tag[]>();
-
-    const collectTags = (category: Category) => {
-      const tags = category.tags ?? [];
-      tags.forEach(tag => tagMap.set(tag.id, tag));
-      catTagMap.set(category.id, tags);
-      category.children?.forEach(collectTags);
-    };
-
-    allCategories.forEach(cat => {
-      catMap.set(cat.id, cat);
-      collectTags(cat);
-    });
-
-    return { tagMap, catMap, catTagMap };
-  }, [allCategories]);
-
-  React.useEffect(() => {
-    const handler = (e: PointerEvent) => {
-      const curActive = activeItemRef.current;
-      const curOver = overInfoRef.current;
-      if (!curActive || !curOver) return;
-
-      const clientX = e.clientX;
-      const clientY = e.clientY;
-      const rect = curOver.targetRect;
-      if (!rect) return;
-
-      if (curActive.type === 'tag' && curOver.id.startsWith('tag-')) {
-        const side: 'left' | 'right' = clientX < rect.left + rect.width / 2 ? 'left' : 'right';
-        if (overInfoRef.current?.side !== side) {
-          setOverInfo(prev => prev ? { ...prev, side } : null);
-        }
-      } else if (curActive.type === 'tag' && curOver.id.startsWith('cat-')) {
-        const relX = clientX - rect.left;
-        const side: 'left' | 'right' = relX < rect.width / 2 ? 'left' : 'right';
-        if (overInfoRef.current?.side !== side) {
-          setOverInfo(prev => prev ? { ...prev, side } : null);
-        }
-      } else if (curActive.type === 'category' && curOver.id.startsWith('cat-')) {
-        const relY = clientY - rect.top;
-        let side: 'top' | 'bottom' | 'child';
-        if (relY < rect.height / 3) side = 'top';
-        else if (relY > (rect.height * 2) / 3) side = 'bottom';
-        else side = 'child';
-        if (overInfoRef.current?.side !== side) {
-          setOverInfo(prev => prev ? { ...prev, side } : null);
-        }
-      }
-    };
-    document.addEventListener('pointermove', handler, { passive: true });
-    return () => document.removeEventListener('pointermove', handler);
-  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -474,125 +420,132 @@ export function CategoryTree({
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const id = String(active.id);
+
     if (id.startsWith('tag-')) {
       const tagId = Number(id.replace('tag-', ''));
-      const tag = lookupCache.tagMap.get(tagId);
-      if (tag) setActiveItem({ id, type: 'tag', data: tag });
+      const catId = findTagCategory(categories, tagId);
+      if (catId !== null) {
+        const tag = categories.reduce<Tag | null>((found, cat) => {
+          if (found) return found;
+          const t = cat.tags?.find(t => t.id === tagId);
+          return t ?? null;
+        }, null);
+        if (tag) {
+          setActiveItem({ id, type: 'tag', data: { ...tag, categoryId: catId } as any });
+        }
+      }
     } else if (id.startsWith('cat-')) {
       const catId = Number(id.replace('cat-', ''));
-      const cat = lookupCache.catMap.get(catId);
-      if (cat) setActiveItem({ id, type: 'category', data: cat });
+      const cat = categories.reduce<Category | null>((found, c) => {
+        if (found) return found;
+        if (c.id === catId) return c;
+        const search = (cats: Category[]): Category | null => {
+          for (const child of cats) {
+            if (child.id === catId) return child;
+            const inChild = search(child.children ?? []);
+            if (inChild) return inChild;
+          }
+          return null;
+        };
+        return search(c.children ?? []);
+      }, null);
+      if (cat) {
+        setActiveItem({ id, type: 'category', data: cat });
+      }
     }
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    if (!activeItem) { setOverInfo(null); return; }
-    const { over } = event;
-    if (!over) { setOverInfo(null); return; }
-
-    const overId = String(over.id);
-    if (!overId.startsWith('tag-') && !overId.startsWith('cat-')) {
-      setOverInfo(null);
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!active || !over) {
+      setActiveItem(null);
       return;
     }
 
-    if (activeItem.type === 'tag' && overId.startsWith('tag-') && overId !== activeItem.id) {
-      const card = document.querySelector(`[data-tag-card="${overId}"]`);
-      if (card) {
-        const rect = card.getBoundingClientRect();
-        const side: 'left' | 'right' = pointerRef.current.x < rect.left + rect.width / 2 ? 'left' : 'right';
-        setOverInfo(prev => prev?.id === overId ? { ...prev, side } : { id: overId, side, targetRect: rect });
-        return;
-      }
-    }
+    const activeId = String(active.id);
+    const overId = String(over.id);
 
-    if (activeItem.type === 'tag' && overId.startsWith('cat-')) {
-      const bar = document.querySelector(`[data-cat-bar="cat-bar-${overId.replace('cat-', '')}"]`);
-      if (bar) {
-        const rect = (bar as HTMLElement).getBoundingClientRect();
-        const relX = pointerRef.current.x - rect.left;
-        const side: 'left' | 'right' = relX < rect.width / 2 ? 'left' : 'right';
-        setOverInfo(prev => prev?.id === overId ? { ...prev, side } : { id: overId, side, targetRect: rect });
-        return;
-      }
-    }
+    if (activeItem?.type === 'tag' && activeId.startsWith('tag-')) {
+      const tagId = Number(activeId.replace('tag-', ''));
+      const sourceCatId = findTagCategory(categories, tagId);
 
-    if (activeItem.type === 'category' && overId.startsWith('cat-') && overId !== activeItem.id) {
-      const bar = document.querySelector(`[data-cat-bar="cat-bar-${overId.replace('cat-', '')}"]`);
-      if (bar) {
-        const rect = (bar as HTMLElement).getBoundingClientRect();
-        const relY = pointerRef.current.y - rect.top;
-        let side: 'top' | 'bottom' | 'child';
-        if (relY < rect.height / 3) side = 'top';
-        else if (relY > (rect.height * 2) / 3) side = 'bottom';
-        else side = 'child';
-        setOverInfo(prev => prev?.id === overId ? { ...prev, side } : { id: overId, side, targetRect: rect });
-        return;
-      }
-    }
-
-    setOverInfo(null);
-  };
-
-  const handleDragEnd = () => {
-    if (activeItem && overInfo) {
-      const { id: targetId, side } = overInfo;
-      const draggedId = activeItem.id;
-
-      if (activeItem.type === 'tag') {
-        const tagId = Number(draggedId.replace('tag-', ''));
-        if (side === 'child' && targetId.startsWith('cat-drop-')) {
-          const targetCatId = Number(targetId.replace('cat-drop-', ''));
+      // 标签放入分类
+      if (overId.startsWith('cat-drop-')) {
+        const targetCatId = Number(overId.replace('cat-drop-', ''));
+        if (sourceCatId !== null && sourceCatId !== targetCatId) {
           onMoveTag(tagId, targetCatId);
-        } else if (targetId.startsWith('tag-')) {
-          const refTagId = Number(targetId.replace('tag-', ''));
-          const refTag = lookupCache.tagMap.get(refTagId);
-          if (refTag) {
-            const tags = lookupCache.catTagMap.get(refTag.categoryId) ?? [];
-            const sortedTags = [...tags].sort((a, b) => a.sortOrder - b.sortOrder);
-            const refIdx = sortedTags.findIndex((t) => t.id === refTagId);
-            if (side === 'left') {
-              const afterId = refIdx > 0 ? sortedTags[refIdx - 1].id : null;
-              onReorderTags([{ id: tagId, categoryId: refTag.categoryId, afterId }]);
-            } else if (side === 'right') {
-              onReorderTags([{ id: tagId, categoryId: refTag.categoryId, afterId: refTagId }]);
-            }
-          }
-        } else if (targetId.startsWith('cat-')) {
-          const targetCatId = Number(targetId.replace('cat-', ''));
-          const tags = lookupCache.catTagMap.get(targetCatId) ?? [];
-          const sortedTags = [...tags].sort((a, b) => a.sortOrder - b.sortOrder);
-          if (side === 'left') {
-            onReorderTags([{ id: tagId, categoryId: targetCatId, afterId: null }]);
-          } else if (side === 'right') {
-            const afterId = sortedTags.length > 0 ? sortedTags[sortedTags.length - 1].id : null;
-            onReorderTags([{ id: tagId, categoryId: targetCatId, afterId }]);
-          }
         }
-      } else if (activeItem.type === 'category') {
-        const draggedCatId = Number(draggedId.replace('cat-', ''));
-        if (side === 'child' && targetId.startsWith('cat-drop-')) {
-          const targetCatId = Number(targetId.replace('cat-drop-', ''));
-          onMoveCategory(draggedCatId, targetCatId);
-        } else if (targetId.startsWith('cat-')) {
-          const refCatId = Number(targetId.replace('cat-', ''));
-          const refCat = lookupCache.catMap.get(refCatId);
-          if (refCat) {
-            const siblings = allCategories.filter((c) => c.parentId === refCat.parentId);
-            const sortedSiblings = [...siblings].sort((a, b) => a.sortOrder - b.sortOrder);
-            const refIdx = sortedSiblings.findIndex((c) => c.id === refCatId);
-            if (side === 'top') {
-              const afterId = refIdx > 0 ? sortedSiblings[refIdx - 1].id : null;
-              onReorderCategories([{ id: draggedCatId, parentId: refCat.parentId, afterId }]);
-            } else if (side === 'bottom') {
-              onReorderCategories([{ id: draggedCatId, parentId: refCat.parentId, afterId: refCatId }]);
+      }
+      // 标签排序
+      else if (overId.startsWith('tag-') && overId !== activeId) {
+        const refTagId = Number(overId.replace('tag-', ''));
+        const refCatId = findTagCategory(categories, refTagId);
+        if (sourceCatId !== null && refCatId !== null) {
+          // 找到源分类和目标分类
+          const findCat = (cats: Category[]): Category | null => {
+            for (const cat of cats) {
+              if (cat.id === sourceCatId) return cat;
+              const found = findCat(cat.children ?? []);
+              if (found) return found;
+            }
+            return null;
+          };
+          const sourceCat = findCat(categories);
+          if (sourceCat) {
+            const tagIds = getTagIds(sourceCat);
+            const oldIdx = tagIds.indexOf(tagId);
+            const refIdx = tagIds.indexOf(refTagId);
+
+            if (oldIdx !== -1 && refIdx !== -1) {
+              tagIds.splice(oldIdx, 1);
+              const newRefIdx = tagIds.indexOf(refTagId);
+              if (newRefIdx !== -1) {
+                tagIds.splice(newRefIdx + 1, 0, tagId);
+              } else {
+                tagIds.push(tagId);
+              }
+              onReorderTags(sourceCatId, tagIds);
             }
           }
         }
       }
+    } else if (activeItem?.type === 'category' && activeId.startsWith('cat-')) {
+      const draggedCatId = Number(activeId.replace('cat-', ''));
+
+      // 分类变为另一分类的子分类
+      if (overId.startsWith('cat-drop-')) {
+        const targetCatId = Number(overId.replace('cat-drop-', ''));
+        const currentParentId = findCategoryParent(categories, draggedCatId);
+        if (currentParentId !== targetCatId) {
+          onMoveCategory(draggedCatId, targetCatId);
+        }
+      }
+      // 分类排序
+      else if (overId.startsWith('cat-') && overId !== activeId) {
+        const refCatId = Number(overId.replace('cat-', ''));
+        const parentId = findCategoryParent(categories, refCatId);
+        const currentParentId = findCategoryParent(categories, draggedCatId);
+
+        if (parentId === currentParentId) {
+          const siblingIds = getSiblingCategoryIds(categories, parentId);
+          const oldIdx = siblingIds.indexOf(draggedCatId);
+          const refIdx = siblingIds.indexOf(refCatId);
+
+          if (oldIdx !== -1 && refIdx !== -1) {
+            siblingIds.splice(oldIdx, 1);
+            const newRefIdx = siblingIds.indexOf(refCatId);
+            if (newRefIdx !== -1) {
+              siblingIds.splice(newRefIdx + 1, 0, draggedCatId);
+            } else {
+              siblingIds.push(draggedCatId);
+            }
+            onReorderCategories(parentId, siblingIds);
+          }
+        }
+      }
     }
+
     setActiveItem(null);
-    setOverInfo(null);
   };
 
   const handleRootSubmit = () => {
@@ -602,14 +555,12 @@ export function CategoryTree({
     setShowAddRoot(false);
   };
 
-  const isDragging = activeItem !== null;
   const activeItemId = activeItem?.id ?? null;
 
   return (
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div>
@@ -630,7 +581,6 @@ export function CategoryTree({
           onMoveTag={onMoveTag}
           onMoveCategory={onMoveCategory}
           activeItemId={activeItemId}
-          overInfo={overInfo}
         />
       ))}
 
@@ -638,13 +588,6 @@ export function CategoryTree({
         <DragOverlay dropAnimation={null}>
           {activeItem?.type === 'tag' ? (
           <div className="relative shadow-2xl rotate-3 cursor-grabbing">
-            {overInfo && (overInfo.side === 'left' || overInfo.side === 'right') && (
-              <div className="absolute inset-0 z-[60] bg-black/30 rounded-xl">
-                <div className={`absolute top-1/2 -translate-y-1/2 ${overInfo.side === 'left' ? 'left-8' : 'right-8'} px-3 py-1.5 rounded-lg bg-accent-primary text-black text-sm font-bold shadow-lg`}>
-                  {overInfo.side === 'left' ? '← 放它左边' : '放它右边 →'}
-                </div>
-              </div>
-            )}
             <div className="[&_*]:!blur-[0.2px]">
               <TagCard tag={activeItem.data as Tag} onUpdate={() => {}} onDelete={() => {}} />
             </div>

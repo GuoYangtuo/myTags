@@ -31,51 +31,11 @@ model Page {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // 页面内容直接存储为 JSON，包含所有分类和标签
+  content     String   @db.LongText
+
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categories Category[]
-  tags       Tag[]
   shares     Share[]
-}
-
-model Category {
-  id               Int      @id @default(autoincrement())
-  pageId           Int
-  parentId         Int?
-  name             String
-  description      String   @default("")
-  confidence       Int      @default(50)
-  confidenceLabel  String   @default("置信度")
-  sortOrder        Float    @default(0)
-  createdAt        DateTime @default(now())
-
-  page     Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  parent   Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Cascade)
-  children Category[] @relation("CategoryTree")
-  tags     Tag[]
-
-  @@index([pageId])
-  @@index([parentId])
-  @@index([pageId, parentId])
-}
-
-model Tag {
-  id               Int      @id @default(autoincrement())
-  pageId           Int
-  categoryId       Int
-  name             String
-  description      String   @default("")
-  confidence       Int      @default(50)
-  confidenceLabel  String   @default("置信度")
-  navUrl           String?
-  sortOrder        Float    @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  page     Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@index([pageId])
-  @@index([categoryId])
 }
 
 model Share {
@@ -84,7 +44,6 @@ model Share {
   pageId      Int
   shareCode   String    @unique
   expiresAt   DateTime?
-  visibleItems String? @db.Text
   createdAt   DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

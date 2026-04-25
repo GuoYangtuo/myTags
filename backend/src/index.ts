@@ -3,8 +3,6 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth.js';
 import pageRoutes from './routes/pages.js';
-import categoryRoutes from './routes/categories.js';
-import tagRoutes from './routes/tags.js';
 import shareRoutes from './routes/shares.js';
 import publicRoutes from './routes/public.js';
 
@@ -21,8 +19,6 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pages', pageRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/tags', tagRoutes);
 app.use('/api/shares', shareRoutes);
 app.use('/api/public', publicRoutes);
 

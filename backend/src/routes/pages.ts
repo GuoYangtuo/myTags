@@ -7,6 +7,30 @@ const router = Router();
 
 router.use(authMiddleware);
 
+// 内容数据结构
+interface PageContent {
+  categories: CategoryData[];
+}
+
+interface CategoryData {
+  id: number;
+  name: string;
+  description: string;
+  confidence: number;
+  confidenceLabel: string;
+  children: CategoryData[];
+  tags: TagData[];
+}
+
+interface TagData {
+  id: number;
+  name: string;
+  description: string;
+  confidence: number;
+  confidenceLabel: string;
+  navUrl: string | null;
+}
+
 const createPageSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(500).optional(),
@@ -16,12 +40,18 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const pages = await prisma.page.findMany({
       where: { userId: req.userId },
-      include: {
-        _count: { select: { tags: true } },
-      },
       orderBy: { createdAt: 'asc' },
     });
-    res.json(pages);
+    // 列表不返回 content，减少数据量
+    const result = pages.map(p => ({
+      id: p.id,
+      userId: p.userId,
+      name: p.name,
+      description: p.description,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+    }));
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -36,9 +66,18 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         userId: req.userId!,
         name: data.name,
         description: data.description || '',
+        content: JSON.stringify({ categories: [] }),
       },
     });
-    res.json(page);
+    res.json({
+      id: page.id,
+      userId: page.userId,
+      name: page.name,
+      description: page.description,
+      createdAt: page.createdAt,
+      updatedAt: page.updatedAt,
+      categories: [],
+    });
   } catch (err) {
     if (err instanceof z.ZodError) {
       res.status(400).json({ error: err.errors });
@@ -58,14 +97,44 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    const updateData: { name?: string; description?: string; content?: string } = {};
+
+    if (req.body.name !== undefined) {
+      updateData.name = req.body.name;
+    }
+    if (req.body.description !== undefined) {
+      updateData.description = req.body.description;
+    }
+    if (req.body.content !== undefined) {
+      // 验证 JSON 格式
+      if (typeof req.body.content === 'string') {
+        JSON.parse(req.body.content); // 验证是否是有效 JSON
+        updateData.content = req.body.content;
+      } else if (typeof req.body.content === 'object') {
+        updateData.content = JSON.stringify(req.body.content);
+      }
+    }
+
     const updated = await prisma.page.update({
       where: { id: pageId },
-      data: {
-        name: req.body.name ?? page.name,
-        description: req.body.description ?? page.description,
-      },
+      data: updateData,
     });
-    res.json(updated);
+
+    // 返回完整数据
+    let pageContent: PageContent = { categories: [] };
+    try {
+      pageContent = JSON.parse(updated.content);
+    } catch {}
+
+    res.json({
+      id: updated.id,
+      userId: updated.userId,
+      name: updated.name,
+      description: updated.description,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+      categories: pageContent.categories,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -94,45 +163,29 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
     const pageId = parseInt(req.params.id as string);
     const page = await prisma.page.findFirst({
       where: { id: pageId, userId: req.userId },
-      include: {
-        categories: {
-          orderBy: { sortOrder: 'asc' },
-          where: { parentId: null },
-          include: {
-            tags: { orderBy: { sortOrder: 'asc' } },
-            children: {
-              orderBy: { sortOrder: 'asc' },
-              include: {
-                tags: { orderBy: { sortOrder: 'asc' } },
-                children: {
-                  orderBy: { sortOrder: 'asc' },
-                  include: {
-                    tags: { orderBy: { sortOrder: 'asc' } },
-                    children: {
-                      orderBy: { sortOrder: 'asc' },
-                      include: {
-                        tags: { orderBy: { sortOrder: 'asc' } },
-                        children: {
-                          orderBy: { sortOrder: 'asc' },
-                          include: {
-                            tags: { orderBy: { sortOrder: 'asc' } },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
     });
     if (!page) {
       res.status(404).json({ error: 'Page not found' });
       return;
     }
-    res.json(page);
+
+    // 解析 content JSON
+    let pageContent: PageContent = { categories: [] };
+    try {
+      pageContent = JSON.parse(page.content);
+    } catch {
+      pageContent = { categories: [] };
+    }
+
+    res.json({
+      id: page.id,
+      userId: page.userId,
+      name: page.name,
+      description: page.description,
+      createdAt: page.createdAt,
+      updatedAt: page.updatedAt,
+      categories: pageContent.categories,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

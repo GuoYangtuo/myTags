@@ -13,35 +13,25 @@ export interface Page {
   createdAt: string;
   updatedAt: string;
   categories: Category[];
-  _count?: { tags: number };
-  user?: { nickname: string; avatarSeed: string };
 }
 
 export interface Category {
   id: number;
-  pageId: number;
-  parentId: number | null;
   name: string;
   description: string;
   confidence: number;
   confidenceLabel: string;
-  sortOrder: number;
   children: Category[];
   tags: Tag[];
 }
 
 export interface Tag {
   id: number;
-  pageId: number;
-  categoryId: number;
   name: string;
   description: string;
   confidence: number;
   confidenceLabel: string;
   navUrl: string | null;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Share {
@@ -55,14 +45,13 @@ export interface Share {
 }
 
 export interface ShareData {
-  page: Page;
+  page: Page & { user?: { nickname: string; avatarSeed: string } };
   expiresAt: string | null;
 }
 
 export interface CreateSharePayload {
   pageId: number;
   expiresAt?: string | null;
-  visibleItems?: number[];
 }
 
 export interface PublicUser {
