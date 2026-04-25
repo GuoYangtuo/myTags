@@ -11,27 +11,22 @@ import { AuthModal } from './components/auth/AuthModal';
 
 function AppLayout() {
   const { user } = useAuthStore();
-  const { currentPage, fetchPages, fetchPage, isPageLoaded, setCurrentPage } = usePageStore();
+  const { currentPage, fetchPages, fetchPage, setCurrentPage } = usePageStore();
 
   useEffect(() => {
-    if (user) {
-      fetchPages().then(() => {
-        const state = usePageStore.getState();
-        if (!state.currentPage && state.pages.length > 0) {
-          setCurrentPage(state.pages[0]);
+    if (!user) return;
+
+    fetchPages().then(() => {
+      const state = usePageStore.getState();
+      if (!state.currentPage && state.pages.length > 0) {
+        const page = state.pages[0];
+        setCurrentPage(page);
+        if (!state.loadedPages[page.id]) {
+          fetchPage(page.id);
         }
-      });
-    }
+      }
+    });
   }, [user]);
-
-  useEffect(() => {
-    if (!user || !currentPage) return;
-
-    if (!isPageLoaded(currentPage.id)) {
-      fetchPage(currentPage.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage?.id, user]);
 
   return (
     <div className="min-h-screen bg-bg-primary">
