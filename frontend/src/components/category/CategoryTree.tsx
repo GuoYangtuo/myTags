@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, memo } from 'react';
 import type { Category, Tag } from '../../types';
 import { TagCard } from '../tag/TagCard';
 import { ConfidenceSlider } from '../tag/ConfidenceSlider';
@@ -32,7 +32,7 @@ interface CategoryTreeProps {
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
 }
 
-function SortableTagCard({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
+function SortableTagCardInner({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
   tag: Tag;
   onUpdate: (d: Partial<Tag>) => void;
   onDelete: () => void;
@@ -74,7 +74,9 @@ function SortableTagCard({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
   );
 }
 
-function SortableCategoryNode({
+const SortableTagCard = memo(SortableTagCardInner);
+
+function SortableCategoryNodeInner({
   category,
   depth,
   allCategories,
@@ -379,6 +381,8 @@ function SortableCategoryNode({
   );
 }
 
+const SortableCategoryNode = memo(SortableCategoryNodeInner);
+
 export function CategoryTree({
   categories,
   allCategories,
@@ -404,6 +408,27 @@ export function CategoryTree({
   overInfoRef.current = overInfo;
   allCategoriesRef.current = allCategories;
   const pointerRef = React.useRef({ x: 0, y: 0 });
+
+  // 缓存分类和标签的扁平化查找表，避免频繁遍历
+  const lookupCache = useMemo(() => {
+    const tagMap = new Map<number, Tag>();
+    const catMap = new Map<number, Category>();
+    const catTagMap = new Map<number, Tag[]>();
+
+    const collectTags = (category: Category) => {
+      const tags = category.tags ?? [];
+      tags.forEach(tag => tagMap.set(tag.id, tag));
+      catTagMap.set(category.id, tags);
+      category.children?.forEach(collectTags);
+    };
+
+    allCategories.forEach(cat => {
+      catMap.set(cat.id, cat);
+      collectTags(cat);
+    });
+
+    return { tagMap, catMap, catTagMap };
+  }, [allCategories]);
 
   React.useEffect(() => {
     const handler = (e: PointerEvent) => {
@@ -451,13 +476,11 @@ export function CategoryTree({
     const id = String(active.id);
     if (id.startsWith('tag-')) {
       const tagId = Number(id.replace('tag-', ''));
-      for (const cat of allCategories) {
-        const tag = cat.tags?.find((t) => t.id === tagId);
-        if (tag) { setActiveItem({ id, type: 'tag', data: tag }); return; }
-      }
+      const tag = lookupCache.tagMap.get(tagId);
+      if (tag) setActiveItem({ id, type: 'tag', data: tag });
     } else if (id.startsWith('cat-')) {
       const catId = Number(id.replace('cat-', ''));
-      const cat = allCategories.find((c) => c.id === catId);
+      const cat = lookupCache.catMap.get(catId);
       if (cat) setActiveItem({ id, type: 'category', data: cat });
     }
   };
@@ -523,21 +546,22 @@ export function CategoryTree({
           onMoveTag(tagId, targetCatId);
         } else if (targetId.startsWith('tag-')) {
           const refTagId = Number(targetId.replace('tag-', ''));
-          const refTagCat = allCategories.find((c) => c.tags?.some((t) => t.id === refTagId));
-          if (refTagCat) {
-            const sortedTags = [...(refTagCat.tags ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+          const refTag = lookupCache.tagMap.get(refTagId);
+          if (refTag) {
+            const tags = lookupCache.catTagMap.get(refTag.categoryId) ?? [];
+            const sortedTags = [...tags].sort((a, b) => a.sortOrder - b.sortOrder);
             const refIdx = sortedTags.findIndex((t) => t.id === refTagId);
             if (side === 'left') {
               const afterId = refIdx > 0 ? sortedTags[refIdx - 1].id : null;
-              onReorderTags([{ id: tagId, categoryId: refTagCat.id, afterId }]);
+              onReorderTags([{ id: tagId, categoryId: refTag.categoryId, afterId }]);
             } else if (side === 'right') {
-              onReorderTags([{ id: tagId, categoryId: refTagCat.id, afterId: refTagId }]);
+              onReorderTags([{ id: tagId, categoryId: refTag.categoryId, afterId: refTagId }]);
             }
           }
         } else if (targetId.startsWith('cat-')) {
           const targetCatId = Number(targetId.replace('cat-', ''));
-          const targetCat = allCategories.find((c) => c.id === targetCatId);
-          const sortedTags = [...(targetCat?.tags ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+          const tags = lookupCache.catTagMap.get(targetCatId) ?? [];
+          const sortedTags = [...tags].sort((a, b) => a.sortOrder - b.sortOrder);
           if (side === 'left') {
             onReorderTags([{ id: tagId, categoryId: targetCatId, afterId: null }]);
           } else if (side === 'right') {
@@ -552,11 +576,10 @@ export function CategoryTree({
           onMoveCategory(draggedCatId, targetCatId);
         } else if (targetId.startsWith('cat-')) {
           const refCatId = Number(targetId.replace('cat-', ''));
-          const refCat = allCategories.find((c) => c.id === refCatId);
+          const refCat = lookupCache.catMap.get(refCatId);
           if (refCat) {
-            const sortedSiblings = [...allCategories]
-              .filter((c) => c.parentId === refCat.parentId)
-              .sort((a, b) => a.sortOrder - b.sortOrder);
+            const siblings = allCategories.filter((c) => c.parentId === refCat.parentId);
+            const sortedSiblings = [...siblings].sort((a, b) => a.sortOrder - b.sortOrder);
             const refIdx = sortedSiblings.findIndex((c) => c.id === refCatId);
             if (side === 'top') {
               const afterId = refIdx > 0 ? sortedSiblings[refIdx - 1].id : null;
