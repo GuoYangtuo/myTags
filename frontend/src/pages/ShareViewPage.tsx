@@ -9,7 +9,7 @@ import { TagDescriptionTooltip } from '../components/tag/TagDescriptionTooltip';
 function PublicCategory({ category, depth = 0 }: { category: Category; depth?: number }) {
   const [expanded, setExpanded] = useState(true);
 
-  const totalTags = category.tags.length + (category.children ?? []).reduce((s, c) => {
+  const totalTags = (category.tags ?? []).length + (category.children ?? []).reduce((s, c) => {
     let count = (c.tags ?? []).length;
     const countDeep = (cats: Category[] | undefined) => {
       if (!cats) return;
@@ -25,7 +25,7 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-2 w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/50 hover:bg-bg-secondary transition-colors text-left mb-2"
       >
-        {(category.children ?? []).length > 0 || category.tags.length > 0 ? (
+        {(category.children ?? []).length > 0 || (category.tags ?? []).length > 0 ? (
           expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
         ) : (
           <span className="w-4 h-4 inline-block" />
@@ -81,7 +81,7 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
               </div>
             ))}
           </div>
-          {category.tags.length === 0 && (category.children ?? []).length === 0 && (
+          {(category.tags ?? []).length === 0 && (category.children ?? []).length === 0 && (
             <p className="text-sm text-text-secondary/50 italic px-4 py-2">暂无标签</p>
           )}
           {(category.children ?? []).map((child) => (
