@@ -51,19 +51,7 @@ function SortableTagCard({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
 
   return (
       <div ref={setNodeRef} {...attributes} {...listeners} data-tag-card={`tag-${tag.id}`}>
-        <div className={`relative${isThisOver ? ' overflow-hidden rounded-xl' : ''}${isThisOver ? ' opacity-20' : ''}`}>
-        {isThisOver && (
-          <div className="absolute inset-0 flex z-10 pointer-events-none rounded-xl">
-            <div className={`w-1/2 flex items-center justify-center text-base font-bold text-black bg-accent-primary/90 rounded-xl ${overInfo?.side === 'left' ? '' : 'opacity-30'}`}>
-              {overInfo?.side === 'left' ? '← 放左边' : ''}
-            </div>
-            <div className={`w-1/2 flex items-center justify-center text-base font-bold text-black bg-accent-primary/90 rounded-xl ${overInfo?.side === 'right' ? '' : 'opacity-30'}`}>
-              {overInfo?.side === 'right' ? '放右边 →' : ''}
-            </div>
-          </div>
-        )}
         <TagCard tag={tag} onUpdate={onUpdate} onDelete={onDelete} />
-      </div>
     </div>
   );
 }
@@ -148,22 +136,22 @@ function SortableCategoryNode({
       ) : (
         <div
           ref={setDragRef}
-          data-cat-bar
+          data-cat-bar={`cat-bar-${category.id}`}
           className={`relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/70 group transition-all duration-150 mb-2 ${
             dragOver ? 'ring-2 ring-accent-primary ring-offset-2 bg-accent-primary/5' : ''
           } ${isThisOver ? 'opacity-20' : ''}`}
         >
           {/* Drop position overlay for categories */}
           {isThisOver && activeItemId?.startsWith('cat-') && (
-            <div className="absolute inset-0 flex z-10 pointer-events-none rounded-xl overflow-hidden">
-              {overInfo?.side === 'top' && <div className="absolute top-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary/90 text-bg-primary text-sm font-bold shadow-lg">放在上方</div></div>}
-              {overInfo?.side === 'bottom' && <div className="absolute bottom-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary/90 text-bg-primary text-sm font-bold shadow-lg">放在下方</div></div>}
-              {overInfo?.side === 'child' && <div className="absolute inset-0 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary/90 text-bg-primary text-sm font-bold shadow-lg">设为子类</div></div>}
+            <div className="absolute inset-0 flex z-[60] pointer-events-none rounded-xl overflow-hidden">
+              {overInfo?.side === 'top' && <div className="absolute top-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary text-black text-sm font-bold shadow-lg">放在上方</div></div>}
+              {overInfo?.side === 'bottom' && <div className="absolute bottom-0 left-0 right-0 h-1/3 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary text-black text-sm font-bold shadow-lg">放在下方</div></div>}
+              {overInfo?.side === 'child' && <div className="absolute inset-0 flex items-center justify-center"><div className="px-3 py-1 rounded-xl bg-accent-primary text-black text-sm font-bold shadow-lg">设为子类</div></div>}
             </div>
           )}
           {isThisOver && activeItemId?.startsWith('tag-') && (category.tags ?? []).length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none rounded-xl">
-              <div className="px-3 py-1 rounded-xl bg-accent-primary/90 text-bg-primary text-sm font-bold shadow-lg">放入此分类</div>
+            <div className="absolute inset-0 flex items-center justify-center z-[60] pointer-events-none rounded-xl">
+              <div className="px-3 py-1 rounded-xl bg-accent-primary text-black text-sm font-bold shadow-lg">放入此分类</div>
             </div>
           )}
           <button
@@ -375,11 +363,48 @@ export function CategoryTree({
   const [showAddRoot, setShowAddRoot] = useState(false);
   const [newRootName, setNewRootName] = useState('');
   const [activeItem, setActiveItem] = useState<{ id: string; type: 'tag' | 'category'; data: Tag | Category } | null>(null);
-  const [overInfo, setOverInfo] = useState<{ id: string; side: 'left' | 'right' | 'top' | 'bottom' | 'child' } | null>(null);
+  const [overInfo, setOverInfo] = useState<{ id: string; side: 'left' | 'right' | 'top' | 'bottom' | 'child'; targetRect?: DOMRect } | null>(null);
+  const activeItemRef = React.useRef(activeItem);
+  const overInfoRef = React.useRef(overInfo);
+  const allCategoriesRef = React.useRef(allCategories);
+  activeItemRef.current = activeItem;
+  overInfoRef.current = overInfo;
+  allCategoriesRef.current = allCategories;
   const pointerRef = React.useRef({ x: 0, y: 0 });
 
   React.useEffect(() => {
-    const handler = (e: PointerEvent) => { pointerRef.current = { x: e.clientX, y: e.clientY }; };
+    const handler = (e: PointerEvent) => {
+      const curActive = activeItemRef.current;
+      const curOver = overInfoRef.current;
+      if (!curActive || !curOver) return;
+
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+      const rect = curOver.targetRect;
+      if (!rect) return;
+
+      if (curActive.type === 'tag' && curOver.id.startsWith('tag-')) {
+        const side: 'left' | 'right' = clientX < rect.left + rect.width / 2 ? 'left' : 'right';
+        if (overInfoRef.current?.side !== side) {
+          setOverInfo(prev => prev ? { ...prev, side } : null);
+        }
+      } else if (curActive.type === 'tag' && curOver.id.startsWith('cat-')) {
+        const relX = clientX - rect.left;
+        const side: 'left' | 'right' = relX < rect.width / 2 ? 'left' : 'right';
+        if (overInfoRef.current?.side !== side) {
+          setOverInfo(prev => prev ? { ...prev, side } : null);
+        }
+      } else if (curActive.type === 'category' && curOver.id.startsWith('cat-')) {
+        const relY = clientY - rect.top;
+        let side: 'top' | 'bottom' | 'child';
+        if (relY < rect.height / 3) side = 'top';
+        else if (relY > (rect.height * 2) / 3) side = 'bottom';
+        else side = 'child';
+        if (overInfoRef.current?.side !== side) {
+          setOverInfo(prev => prev ? { ...prev, side } : null);
+        }
+      }
+    };
     document.addEventListener('pointermove', handler, { passive: true });
     return () => document.removeEventListener('pointermove', handler);
   }, []);
@@ -415,51 +440,37 @@ export function CategoryTree({
       return;
     }
 
-    // Use elementFromPoint to get the element under cursor for left/right detection
-    const clientX = pointerRef.current.x;
-    const clientY = pointerRef.current.y;
-
     if (activeItem.type === 'tag' && overId.startsWith('tag-') && overId !== activeItem.id) {
-      const tagId = Number(overId.replace('tag-', ''));
-      const tag = allCategories.flatMap((c) => c.tags ?? []).find((t) => t.id === tagId);
       const card = document.querySelector(`[data-tag-card="${overId}"]`);
       if (card) {
         const rect = card.getBoundingClientRect();
-        const side: 'left' | 'right' = clientX < rect.left + rect.width / 2 ? 'left' : 'right';
-        setOverInfo({ id: overId, side });
+        const side: 'left' | 'right' = pointerRef.current.x < rect.left + rect.width / 2 ? 'left' : 'right';
+        setOverInfo(prev => prev?.id === overId ? { ...prev, side } : { id: overId, side, targetRect: rect });
         return;
       }
     }
 
     if (activeItem.type === 'tag' && overId.startsWith('cat-')) {
-      const el = document.elementFromPoint(clientX, clientY);
-      const bar = el?.closest('[data-cat-bar]');
+      const bar = document.querySelector(`[data-cat-bar="cat-bar-${overId.replace('cat-', '')}"]`);
       if (bar) {
-        const rect = bar.getBoundingClientRect();
-        const relX = clientX - rect.left;
-        const relY = clientY - rect.top;
-        const w = rect.width;
-        const h = rect.height;
-        let side: 'left' | 'right';
-        if (relX < w / 2) side = 'left';
-        else side = 'right';
-        setOverInfo({ id: overId, side });
+        const rect = (bar as HTMLElement).getBoundingClientRect();
+        const relX = pointerRef.current.x - rect.left;
+        const side: 'left' | 'right' = relX < rect.width / 2 ? 'left' : 'right';
+        setOverInfo(prev => prev?.id === overId ? { ...prev, side } : { id: overId, side, targetRect: rect });
         return;
       }
     }
 
     if (activeItem.type === 'category' && overId.startsWith('cat-') && overId !== activeItem.id) {
-      const el = document.elementFromPoint(clientX, clientY);
-      const bar = el?.closest('[data-cat-bar]');
+      const bar = document.querySelector(`[data-cat-bar="cat-bar-${overId.replace('cat-', '')}"]`);
       if (bar) {
-        const rect = bar.getBoundingClientRect();
-        const relY = clientY - rect.top;
-        const h = rect.height;
+        const rect = (bar as HTMLElement).getBoundingClientRect();
+        const relY = pointerRef.current.y - rect.top;
         let side: 'top' | 'bottom' | 'child';
-        if (relY < h / 3) side = 'top';
-        else if (relY > (h * 2) / 3) side = 'bottom';
+        if (relY < rect.height / 3) side = 'top';
+        else if (relY > (rect.height * 2) / 3) side = 'bottom';
         else side = 'child';
-        setOverInfo({ id: overId, side });
+        setOverInfo(prev => prev?.id === overId ? { ...prev, side } : { id: overId, side, targetRect: rect });
         return;
       }
     }
@@ -567,17 +578,28 @@ export function CategoryTree({
         />
       ))}
 
-      <DragOverlay dropAnimation={null}>
-        {activeItem?.type === 'tag' ? (
-          <div className="opacity-60 shadow-2xl rotate-3 cursor-grabbing">
-            <TagCard tag={activeItem.data as Tag} onUpdate={() => {}} onDelete={() => {}} />
+      <div data-dnd-overlay-wrapper>
+        <DragOverlay dropAnimation={null}>
+          {activeItem?.type === 'tag' ? (
+          <div className="relative shadow-2xl rotate-3 cursor-grabbing">
+            {overInfo && (overInfo.side === 'left' || overInfo.side === 'right') && (
+              <div className="absolute inset-0 z-[60] bg-black/30 rounded-xl">
+                <div className={`absolute top-1/2 -translate-y-1/2 ${overInfo.side === 'left' ? 'left-8' : 'right-8'} px-3 py-1.5 rounded-lg bg-accent-primary text-black text-sm font-bold shadow-lg`}>
+                  {overInfo.side === 'left' ? '← 放它左边' : '放它右边 →'}
+                </div>
+              </div>
+            )}
+            <div className="[&_*]:!blur-[0.2px]">
+              <TagCard tag={activeItem.data as Tag} onUpdate={() => {}} onDelete={() => {}} />
+            </div>
           </div>
         ) : activeItem?.type === 'category' ? (
           <div className="opacity-60 shadow-2xl rotate-3 cursor-grabbing flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-border-strong bg-bg-secondary/90 font-bold font-heading text-sm">
             {(activeItem.data as Category).name}
           </div>
         ) : null}
-      </DragOverlay>
+        </DragOverlay>
+      </div>
 
       {showAddRoot ? (
         <div className="flex gap-2 mt-2 ml-2 flex-wrap sm:flex-nowrap category-enter">
