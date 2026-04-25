@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { Tag } from '../../types';
 import { ConfidenceSlider } from './ConfidenceSlider';
 import { getConfidenceColor, isNoConfidence, NO_CONFIDENCE_VALUE } from '../../utils/helpers';
-import { Edit2, Trash2, Link2, ExternalLink, X, ChevronDown } from 'lucide-react';
+import { Edit2, Trash2, Link2, ExternalLink, X, ChevronDown, GripVertical } from 'lucide-react';
 import { Modal, Input, Button } from '../ui';
 
 const CONFIDENCE_LABEL_PRESETS = [
@@ -21,9 +21,11 @@ interface TagCardProps {
   onUpdate: (data: Partial<Tag>) => void;
   onDelete: () => void;
   isDragging?: boolean;
+  dragHandleRef?: React.RefObject<HTMLDivElement | null>;
+  dragListeners?: React.HTMLAttributes<HTMLDivElement>;
 }
 
-export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
+export function TagCard({ tag, onUpdate, onDelete, isDragging, dragHandleRef, dragListeners }: TagCardProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState(tag.name);
   const [editDescription, setEditDescription] = useState(tag.description || '');
@@ -95,10 +97,18 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
     <>
       <div className={`tag-card bg-bg-card rounded-xl border-2 border-border-strong p-4 relative group ${isDragging ? 'dragging' : ''}`}>
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2 flex-1">
-            <span className="text-left font-bold font-heading text-base">
-              {tag.name}
-            </span>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Mobile drag handle — only visible on small screens */}
+            <div
+              ref={dragHandleRef}
+              {...dragListeners}
+              className="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary/40 hover:text-text-secondary md:hidden"
+              data-tag-drag-handle
+              style={{ touchAction: 'none' }}
+            >
+              <GripVertical size={16} />
+            </div>
+            <span className="text-left font-bold font-heading text-base min-w-0 truncate">{tag.name}</span>
             <button
               onClick={handleOpenEdit}
               className="p-1 rounded hover:bg-bg-secondary transition-colors opacity-0 group-hover:opacity-100"
@@ -139,7 +149,9 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging }: TagCardProps) {
           <p className="text-xs text-text-secondary/50 italic">不使用置信度</p>
         ) : (
           <div className="flex items-center gap-2 w-full">
-            <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} label={tag.confidenceLabel} />
+            <div onPointerDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+              <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} label={tag.confidenceLabel} />
+            </div>
           </div>
         )}
 

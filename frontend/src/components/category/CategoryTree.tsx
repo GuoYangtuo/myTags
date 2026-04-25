@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { Category, Tag } from '../../types';
 import { TagCard } from '../tag/TagCard';
 import { ConfidenceSlider } from '../tag/ConfidenceSlider';
-import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus, GripVertical } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
@@ -41,7 +41,9 @@ function SortableTagCard({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
 }) {
   const { attributes, listeners, setNodeRef } = useSortable({ id: `tag-${tag.id}` });
   const isThisDragging = activeItemId === `tag-${tag.id}`;
-  const isThisOver = overInfo?.id === `tag-${tag.id}`;
+  const dragHandleRef = useRef<HTMLDivElement | null>(null);
+
+  const isMobile = window.matchMedia?.('(max-width: 767px)').matches ?? false;
 
   if (isThisDragging) {
     return (
@@ -49,9 +51,25 @@ function SortableTagCard({ tag, onUpdate, onDelete, activeItemId, overInfo }: {
     );
   }
 
+  const wrapperListeners = isMobile ? {} : listeners;
+  const cardListeners = isMobile ? listeners : {};
+
+  const wrapperAttributes = { ...attributes, 'data-tag-card': `tag-${tag.id}` };
+
   return (
-      <div ref={setNodeRef} {...attributes} {...listeners} data-tag-card={`tag-${tag.id}`}>
-        <TagCard tag={tag} onUpdate={onUpdate} onDelete={onDelete} />
+    <div
+      ref={setNodeRef}
+      {...wrapperAttributes}
+      {...wrapperListeners}
+      className="md:cursor-grab"
+    >
+      <TagCard
+        tag={tag}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        dragHandleRef={dragHandleRef}
+        dragListeners={cardListeners}
+      />
     </div>
   );
 }
@@ -105,6 +123,9 @@ function SortableCategoryNode({
 
   const { setNodeRef: setDropRef } = useDroppable({ id: `cat-drop-${category.id}` });
   const { attributes, listeners, setNodeRef: setDragRef } = useSortable({ id: `cat-${category.id}` });
+  const catDragHandleRef = useRef<HTMLButtonElement | null>(null);
+
+  const isMobile = window.matchMedia?.('(max-width: 767px)').matches ?? false;
 
   const isThisDragging = activeItemId === `cat-${category.id}`;
   const isThisOver = overInfo?.id === `cat-${category.id}`;
@@ -164,6 +185,18 @@ function SortableCategoryNode({
               <span className="w-4 h-4 inline-block" />
             )}
           </button>
+          {/* Mobile drag handle for category bar */}
+          {isMobile && (
+            <button
+              ref={catDragHandleRef}
+              {...listeners}
+              className="p-0.5 rounded cursor-grab active:cursor-grabbing text-text-secondary/40 hover:text-text-secondary flex-shrink-0"
+              style={{ touchAction: 'none' }}
+              title="拖动分类"
+            >
+              <GripVertical size={16} />
+            </button>
+          )}
 
           {isEditing ? (
             <div className="flex-1 flex flex-col gap-2 min-w-0">
@@ -211,11 +244,11 @@ function SortableCategoryNode({
             </div>
           ) : (
             <button
-              className="flex-1 text-left font-bold font-heading text-sm md:text-base hover:text-accent-primary transition-colors cursor-grab active:cursor-grabbing truncate"
+              className="flex-1 text-left font-bold font-heading text-sm md:text-base hover:text-accent-primary transition-colors truncate"
               onDoubleClick={() => { setIsEditing(true); }}
               title={category.description || category.name}
               {...attributes}
-              {...listeners}
+              {...(isMobile ? {} : listeners)}
             >
               {category.name}
               <span className="ml-1 md:ml-2 text-xs font-normal text-text-secondary whitespace-nowrap">
