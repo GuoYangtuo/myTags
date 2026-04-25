@@ -40,14 +40,31 @@ router.get('/share/:code', async (req: Request, res: Response) => {
               orderBy: { sortOrder: 'asc' },
               where: { parentId: null },
               include: {
+                tags: { orderBy: { sortOrder: 'asc' } },
                 children: {
                   orderBy: { sortOrder: 'asc' },
                   include: {
-                    children: { orderBy: { sortOrder: 'asc' } },
                     tags: { orderBy: { sortOrder: 'asc' } },
+                    children: {
+                      orderBy: { sortOrder: 'asc' },
+                      include: {
+                        tags: { orderBy: { sortOrder: 'asc' } },
+                        children: {
+                          orderBy: { sortOrder: 'asc' },
+                          include: {
+                            tags: { orderBy: { sortOrder: 'asc' } },
+                            children: {
+                              orderBy: { sortOrder: 'asc' },
+                              include: {
+                                tags: { orderBy: { sortOrder: 'asc' } },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
                 },
-                tags: { orderBy: { sortOrder: 'asc' } },
               },
             },
           },
@@ -105,14 +122,31 @@ router.get('/page/:pageId', async (req: Request, res: Response) => {
           orderBy: { sortOrder: 'asc' },
           where: { parentId: null },
           include: {
+            tags: { orderBy: { sortOrder: 'asc' } },
             children: {
               orderBy: { sortOrder: 'asc' },
               include: {
-                children: { orderBy: { sortOrder: 'asc' } },
                 tags: { orderBy: { sortOrder: 'asc' } },
+                children: {
+                  orderBy: { sortOrder: 'asc' },
+                  include: {
+                    tags: { orderBy: { sortOrder: 'asc' } },
+                    children: {
+                      orderBy: { sortOrder: 'asc' },
+                      include: {
+                        tags: { orderBy: { sortOrder: 'asc' } },
+                        children: {
+                          orderBy: { sortOrder: 'asc' },
+                          include: {
+                            tags: { orderBy: { sortOrder: 'asc' } },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
               },
             },
-            tags: { orderBy: { sortOrder: 'asc' } },
           },
         },
       },

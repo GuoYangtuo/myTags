@@ -97,17 +97,34 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
       include: {
         categories: {
           orderBy: { sortOrder: 'asc' },
+          where: { parentId: null },
           include: {
+            tags: { orderBy: { sortOrder: 'asc' } },
             children: {
               orderBy: { sortOrder: 'asc' },
               include: {
-                children: { orderBy: { sortOrder: 'asc' } },
                 tags: { orderBy: { sortOrder: 'asc' } },
+                children: {
+                  orderBy: { sortOrder: 'asc' },
+                  include: {
+                    tags: { orderBy: { sortOrder: 'asc' } },
+                    children: {
+                      orderBy: { sortOrder: 'asc' },
+                      include: {
+                        tags: { orderBy: { sortOrder: 'asc' } },
+                        children: {
+                          orderBy: { sortOrder: 'asc' },
+                          include: {
+                            tags: { orderBy: { sortOrder: 'asc' } },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
               },
             },
-            tags: { orderBy: { sortOrder: 'asc' } },
           },
-          where: { parentId: null },
         },
       },
     });
