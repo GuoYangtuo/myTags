@@ -38,7 +38,7 @@ function PublicCategory({ category, depth = 0 }: { category: Category; depth?: n
         <div>
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {(category.tags ?? []).map((tag) => (
-              <div key={tag.id} className="bg-bg-card rounded-xl border-2 border-border-strong p-4 group">
+              <div key={tag.id} className="bg-bg-card rounded-xl border-2 border-border-strong p-3 group">
                 <div className="flex items-center justify-between gap-2">
                   <TagDescriptionTooltip tagName={tag.name} description={tag.description}>
                     <div className="flex items-center gap-2 min-w-0 flex-1">
