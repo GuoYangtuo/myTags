@@ -42,7 +42,7 @@ export function PageEditor() {
           if (cat.children) flatten(cat.children);
         }
       };
-      flatten(currentPage.categories);
+      flatten(currentPage?.categories ?? []);
     }
     return flat;
   }, [currentPage?.categories]);

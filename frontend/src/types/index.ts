@@ -12,7 +12,7 @@ export interface Page {
   description: string;
   createdAt: string;
   updatedAt: string;
-  categories: Category[];
+  categories?: Category[];
 }
 
 export interface Category {

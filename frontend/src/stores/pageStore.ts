@@ -130,7 +130,7 @@ export const usePageStore = create<PageState>((set, get) => ({
 
     set({ saving: true });
     try {
-      const content = { categories: currentPage.categories };
+      const content = { categories: currentPage.categories ?? [] };
       const updated = await pageApi.saveContent(currentPage.id, content);
       set((state) => ({
         currentPage: updated,
@@ -174,8 +174,8 @@ export const usePageStore = create<PageState>((set, get) => ({
       };
 
       const newCategories = parentId === null
-        ? [...state.currentPage.categories, newCategory]
-        : addToTree(state.currentPage.categories);
+        ? [...(state.currentPage.categories ?? []), newCategory]
+        : addToTree(state.currentPage.categories ?? []);
 
       const newPage = { ...state.currentPage, categories: newCategories };
       return {
@@ -199,7 +199,7 @@ export const usePageStore = create<PageState>((set, get) => ({
         });
       };
 
-      const newPage = { ...state.currentPage, categories: updateInTree(state.currentPage.categories) };
+      const newPage = { ...state.currentPage, categories: updateInTree(state.currentPage.categories ?? []) };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
@@ -217,7 +217,7 @@ export const usePageStore = create<PageState>((set, get) => ({
           .filter((c) => c.id !== id)
           .map((c) => ({ ...c, children: removeFromTree(c.children) }));
 
-      const newPage = { ...state.currentPage, categories: removeFromTree(state.currentPage.categories) };
+      const newPage = { ...state.currentPage, categories: removeFromTree(state.currentPage.categories ?? []) };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
@@ -243,7 +243,7 @@ export const usePageStore = create<PageState>((set, get) => ({
         });
       };
 
-      let cats = findAndRemove([...state.currentPage.categories]);
+      let cats = findAndRemove([...(state.currentPage.categories ?? [])]);
       if (!movedCategory) return state;
 
       // 添加到新位置
@@ -294,7 +294,7 @@ export const usePageStore = create<PageState>((set, get) => ({
         });
       };
 
-      const newPage = { ...state.currentPage, categories: addToTree(state.currentPage.categories) };
+      const newPage = { ...state.currentPage, categories: addToTree(state.currentPage.categories ?? []) };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
@@ -315,7 +315,7 @@ export const usePageStore = create<PageState>((set, get) => ({
         }));
       };
 
-      const newPage = { ...state.currentPage, categories: updateInTree(state.currentPage.categories) };
+      const newPage = { ...state.currentPage, categories: updateInTree(state.currentPage.categories ?? []) };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
@@ -336,7 +336,7 @@ export const usePageStore = create<PageState>((set, get) => ({
         }));
       };
 
-      const newPage = { ...state.currentPage, categories: removeFromTree(state.currentPage.categories) };
+      const newPage = { ...state.currentPage, categories: removeFromTree(state.currentPage.categories ?? []) };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
@@ -350,7 +350,7 @@ export const usePageStore = create<PageState>((set, get) => ({
       if (!state.currentPage) return state;
 
       let movedTag: Tag | null = null;
-      const cats = state.currentPage.categories;
+      const cats = state.currentPage.categories ?? [];
 
       // 从树中移除标签
       const removeTag = (categories: Category[]): Category[] => {
@@ -408,7 +408,7 @@ export const usePageStore = create<PageState>((set, get) => ({
         });
       };
 
-      const newPage = { ...state.currentPage, categories: reorderInTree(state.currentPage.categories) };
+      const newPage = { ...state.currentPage, categories: reorderInTree(state.currentPage.categories ?? []) };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
@@ -448,7 +448,7 @@ export const usePageStore = create<PageState>((set, get) => ({
         });
       };
 
-      const newPage = { ...state.currentPage, categories: reorderAtLevel(state.currentPage.categories, parentId) };
+      const newPage = { ...state.currentPage, categories: reorderAtLevel(state.currentPage.categories ?? [], parentId) };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
