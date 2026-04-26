@@ -135,7 +135,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
         {isFocusMode && <FocusBreadcrumb />}
 
-        <div className="flex items-start justify-between mb-4 gap-3">
+        <div className="flex items-start justify-between mb-2 gap-3 mt-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl md:text-3xl font-bold font-heading truncate text-text-primary">

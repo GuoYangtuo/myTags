@@ -239,10 +239,10 @@ export const usePageStore = create<PageState>((set, get) => ({
     const idx = focusedCategoryPath.findIndex(p => p.id === targetId);
     if (idx === -1) return;
 
-    // 截断路径到目标位置
+    // 截断路径到目标位置（含目标本身）
     const newPath = focusedCategoryPath.slice(0, idx + 1);
 
-    // 重新查找该分类
+    // 重新查找该分类（从树根遍历）
     const findCategory = (cats: Category[]): Category | null => {
       for (const cat of cats) {
         if (cat.id === targetId) return cat;
