@@ -248,7 +248,7 @@ export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAdd
               )}
             </div>
           ) : (
-            <span className="text-xs text-text-secondary/60 italic">不使用置信度</span>
+            <span className="text-xs text-text-secondary/60 italic">设置标签的置信度</span>
           )}
         </label>
 

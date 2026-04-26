@@ -1,5 +1,6 @@
 import { Layers, Plus, Share2 } from 'lucide-react';
 import { usePageStore } from '../../stores/pageStore';
+import { useAuthStore } from '../../stores/authStore';
 import { useState } from 'react';
 import { Modal, Input, Button } from '../ui';
 
@@ -9,13 +10,14 @@ interface BottomNavProps {
 
 export function BottomNav({ onShare }: BottomNavProps) {
   const { pages, currentPage, setCurrentPage, createPage } = usePageStore();
+  const { user } = useAuthStore();
   const [showPageList, setShowPageList] = useState(false);
   const [showNewPage, setShowNewPage] = useState(false);
   const [newPageName, setNewPageName] = useState('');
 
   const handleCreate = async () => {
     if (!newPageName.trim()) return;
-    const page = await createPage(newPageName.trim());
+    const page = await createPage(newPageName.trim(), `@${user?.nickname} 的标签页面`);
     setNewPageName('');
     setShowNewPage(false);
     setCurrentPage(page);

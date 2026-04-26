@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { usePageStore } from '../../stores/pageStore';
+import { useAuthStore } from '../../stores/authStore';
 import { Plus, Edit2, Trash2, Layers } from 'lucide-react';
 
 export function Sidebar() {
   const { pages, currentPage, setCurrentPage, createPage, deletePage, updatePage, isDirty, fetchPage, showConfirm } = usePageStore();
+  const { user } = useAuthStore();
   const [showNewPage, setShowNewPage] = useState(false);
   const [newPageName, setNewPageName] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -11,7 +13,7 @@ export function Sidebar() {
 
   const handleCreate = async () => {
     if (!newPageName.trim()) return;
-    const page = await createPage(newPageName.trim());
+    const page = await createPage(newPageName.trim(), `@${user?.nickname} 的标签页面`);
     setNewPageName('');
     setShowNewPage(false);
     setCurrentPage(page);
