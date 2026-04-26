@@ -95,3 +95,5 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
     </div>
   );
 }
+
+export { ConfirmDialog } from './ConfirmDialog';

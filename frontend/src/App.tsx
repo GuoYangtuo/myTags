@@ -8,10 +8,11 @@ import { BottomNav } from './components/layout/BottomNav';
 import { PageEditor } from './pages/PageEditor';
 import { ShareViewPage } from './pages/ShareViewPage';
 import { AuthModal } from './components/auth/AuthModal';
+import { ConfirmDialog } from './components/ui/ConfirmDialog';
 
 function AppLayout() {
   const { user } = useAuthStore();
-  const { currentPage, fetchPages, fetchPage, setCurrentPage } = usePageStore();
+  const { currentPage, fetchPages, fetchPage, setCurrentPage, confirmState } = usePageStore();
 
   useEffect(() => {
     if (!user) return;
@@ -42,6 +43,14 @@ function AppLayout() {
         {/* Mobile bottom navigation */}
         <BottomNav />
       </div>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={confirmState.onCancel}
+      />
     </div>
   );
 }

@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { usePageStore } from '../stores/pageStore';
 import { useAuthStore } from '../stores/authStore';
 import { CategoryTree } from '../components/category/CategoryTree';
 import { QuickAddInput } from '../components/tag/QuickAddInput';
 import { ShareModal } from '../components/share/ShareModal';
 import { Button, Modal, Input } from '../components/ui';
-import { Share2, Settings, Globe, Save, Check, Loader2 } from 'lucide-react';
+import { Share2, Settings, Globe } from 'lucide-react';
 
 export function PageEditor() {
   const {
@@ -19,8 +19,6 @@ export function PageEditor() {
     updateCategory,
     deleteCategory,
     reorderCategories,
-    saveContent,
-    saving,
     isDirty,
     markDirty,
     moveTag,
@@ -32,6 +30,17 @@ export function PageEditor() {
   const [editDesc, setEditDesc] = useState('');
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [editName, setEditName] = useState('');
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const allCategories = useMemo(() => {
     const flat: any[] = [];
@@ -64,14 +73,6 @@ export function PageEditor() {
     createTag(categoryId, name, confidence, undefined, confidenceLabel);
   };
 
-  const handleSave = async () => {
-    try {
-      await saveContent();
-    } catch {
-      // 错误已在 store 中处理
-    }
-  };
-
   return (
     <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
@@ -94,35 +95,6 @@ export function PageEditor() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-            {/* 保存状态和按钮 */}
-            <div className="flex items-center gap-2">
-              {saving ? (
-                <span className="flex items-center gap-1 text-sm text-text-secondary/60">
-                  <Loader2 size={14} className="animate-spin" />
-                  保存中...
-                </span>
-              ) : isDirty ? (
-                <span className="flex items-center gap-1 text-sm text-amber-500">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  未保存
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 text-sm text-green-500">
-                  <Check size={14} />
-                  已保存
-                </span>
-              )}
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleSave}
-                disabled={saving || !isDirty}
-              >
-                <Save size={14} className="mr-1" />
-                <span className="hidden sm:inline">保存</span>
-              </Button>
-            </div>
-
             <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditName(currentPage.name); setEditDescOpen(true); }}>
               <Settings size={14} className="mr-1" />
               <span className="hidden sm:inline">编辑页面</span>

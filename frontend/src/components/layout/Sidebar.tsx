@@ -3,7 +3,7 @@ import { usePageStore } from '../../stores/pageStore';
 import { Plus, Edit2, Trash2, Layers } from 'lucide-react';
 
 export function Sidebar() {
-  const { pages, currentPage, setCurrentPage, createPage, deletePage, updatePage } = usePageStore();
+  const { pages, currentPage, setCurrentPage, createPage, deletePage, updatePage, isDirty, fetchPage, showConfirm } = usePageStore();
   const [showNewPage, setShowNewPage] = useState(false);
   const [newPageName, setNewPageName] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -21,6 +21,25 @@ export function Sidebar() {
     if (!editName.trim()) return;
     await updatePage(id, { name: editName.trim() });
     setEditingId(null);
+  };
+
+  const handleSelectPage = (page: any) => {
+    if (isDirty && currentPage) {
+      showConfirm({
+        title: '有未保存的更改',
+        message: `切换到「${page.name}」将丢失当前页面的所有未保存更改，确定要切换吗？`,
+        onConfirm: () => doSwitchPage(page),
+      });
+    } else {
+      doSwitchPage(page);
+    }
+  };
+
+  const doSwitchPage = (page: any) => {
+    setCurrentPage(page);
+    if (!usePageStore.getState().loadedPages[page.id]) {
+      fetchPage(page.id);
+    }
   };
 
   return (
@@ -67,7 +86,7 @@ export function Sidebar() {
                   ? 'bg-accent-primary text-white border-2 border-border-strong shadow-[2px_2px_0_var(--color-border-strong)]'
                   : 'bg-bg-card border-2 border-transparent hover:border-border-light'
               }`}
-              onClick={() => setCurrentPage(page)}
+              onClick={() => handleSelectPage(page)}
             >
               {editingId === page.id ? (
                 <input
@@ -92,7 +111,7 @@ export function Sidebar() {
                   <Edit2 size={12} />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); if (confirm('确定删除这个页面?')) deletePage(page.id); }}
+                  onClick={(e) => { e.stopPropagation(); showConfirm({ title: '删除页面', message: `确定删除「${page.name}」吗？`, onConfirm: () => deletePage(page.id) }); }}
                   className="p-1 rounded hover:bg-red-500/20 text-red-500"
                 >
                   <Trash2 size={12} />

@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo, memo } from 'react';
 import type { Category, Tag } from '../../types';
 import { TagCard } from '../tag/TagCard';
 import { ConfidenceSlider } from '../tag/ConfidenceSlider';
+import { usePageStore } from '../../stores/pageStore';
 import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus, GripVertical } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -106,6 +107,7 @@ function SortableCategoryNodeInner({
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
   activeItemId: string | null;
 }) {
+  const { showConfirm } = usePageStore();
   const [expanded, setExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
@@ -249,7 +251,7 @@ function SortableCategoryNodeInner({
               <Edit2 size={14} className="text-text-secondary" />
             </button>
             <button
-              onClick={() => { if (confirm(`确定删除分类 "${category.name}" 吗？`)) onDeleteCategory(category.id); }}
+              onClick={() => showConfirm({ title: '删除分类', message: `确定删除分类「${category.name}」吗？`, onConfirm: () => onDeleteCategory(category.id) })}
               className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
             >
               <Trash2 size={14} />
@@ -411,6 +413,7 @@ export function CategoryTree({
   onMoveTag,
   onMoveCategory,
 }: CategoryTreeProps) {
+  const { showConfirm } = usePageStore();
   const [showAddRoot, setShowAddRoot] = useState(false);
   const [newRootName, setNewRootName] = useState('');
   const [activeItem, setActiveItem] = useState<{ id: string; type: 'tag' | 'category'; data: Tag | Category } | null>(null);

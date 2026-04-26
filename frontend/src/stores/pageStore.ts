@@ -23,6 +23,16 @@ interface PageState {
   saveContent: () => Promise<void>;
   markDirty: () => void;
 
+  // 通用确认弹窗
+  confirmState: {
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  };
+  showConfirm: (opts: { title: string; message: string; onConfirm: () => void; onCancel?: () => void }) => void;
+
   // 分类操作
   createCategory: (parentId: number | null, name: string, description?: string, confidence?: number, confidenceLabel?: string) => void;
   updateCategory: (id: number, data: { name?: string; description?: string; confidence?: number; confidenceLabel?: string }) => void;
@@ -55,6 +65,32 @@ export const usePageStore = create<PageState>((set, get) => ({
   saving: false,
   isDirty: false,
   nextId: generateId(),
+
+  confirmState: {
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => {},
+  },
+
+  showConfirm: (opts) => {
+    set({
+      confirmState: {
+        open: true,
+        title: opts.title,
+        message: opts.message,
+        onConfirm: () => {
+          opts.onConfirm();
+          set({ confirmState: { ...get().confirmState, open: false } });
+        },
+        onCancel: () => {
+          opts.onCancel?.();
+          set({ confirmState: { ...get().confirmState, open: false } });
+        },
+      },
+    });
+  },
 
   fetchPages: async () => {
     set({ loading: true });
