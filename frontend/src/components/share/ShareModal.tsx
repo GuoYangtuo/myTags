@@ -88,77 +88,111 @@ function TreePicker({ categories, selected, onChange }: TreePickerProps) {
     return checkedCount > 0 && checkedCount < allIds.length;
   };
 
-  const renderTree = (cats: Category[], depth = 0): React.ReactNode => {
-    return cats.map(cat => {
-      const checked = isCatChecked(cat);
-      const indeterminate = isCatIndeterminate(cat);
-      const [expanded, setExpanded] = useState(true);
+  return (
+    <div>
+      {categories.map(cat => (
+        <TreeNode
+          key={cat.id}
+          cat={cat}
+          depth={0}
+          selected={selected}
+          isCatChecked={isCatChecked}
+          isCatIndeterminate={isCatIndeterminate}
+          toggleCat={toggleCat}
+          toggleTag={toggleTag}
+        />
+      ))}
+    </div>
+  );
+}
 
-      return (
-        <div key={cat.id}>
-          <div
-            className="group flex items-center gap-1.5 py-2 pr-3 rounded-xl cursor-pointer select-none transition-colors hover:bg-bg-secondary/70"
-            style={{ paddingLeft: `${depth * 18 + 10}px` }}
-            onClick={() => toggleCat(cat, !checked)}
+interface TreeNodeProps {
+  cat: Category;
+  depth: number;
+  selected: Set<number>;
+  isCatChecked: (cat: Category) => boolean;
+  isCatIndeterminate: (cat: Category) => boolean;
+  toggleCat: (cat: Category, checked: boolean) => void;
+  toggleTag: (catId: number, tagId: number, checked: boolean) => void;
+}
+
+function TreeNode({ cat, depth, selected, isCatChecked, isCatIndeterminate, toggleCat, toggleTag }: TreeNodeProps) {
+  const [expanded, setExpanded] = useState(true);
+  const checked = isCatChecked(cat);
+  const indeterminate = isCatIndeterminate(cat);
+
+  return (
+    <div>
+      <div
+        className="group flex items-center gap-1.5 py-2 pr-3 rounded-xl cursor-pointer select-none transition-colors hover:bg-bg-secondary/70"
+        style={{ paddingLeft: `${depth * 18 + 10}px` }}
+        onClick={() => toggleCat(cat, !checked)}
+      >
+        {cat.children.length > 0 || cat.tags.length > 0 ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
+            className="p-0.5 rounded flex-shrink-0 hover:bg-border-light/50"
           >
-            {cat.children.length > 0 || cat.tags.length > 0 ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
-                className="p-0.5 rounded flex-shrink-0 hover:bg-border-light/50"
-              >
-                <ChevronRight
-                  size={13}
-                  className={`text-text-secondary transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
-                />
-              </button>
-            ) : (
-              <span className="w-[18px] flex-shrink-0" />
-            )}
+            <ChevronRight
+              size={13}
+              className={`text-text-secondary transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
+            />
+          </button>
+        ) : (
+          <span className="w-[18px] flex-shrink-0" />
+        )}
 
-            {indeterminate ? (
-              <CheckSquare size={15} className="text-accent-primary flex-shrink-0" />
-            ) : checked ? (
-              <CheckSquare size={15} className="text-accent-primary flex-shrink-0" />
-            ) : (
-              <Square size={15} className="text-text-secondary flex-shrink-0" />
-            )}
+        {indeterminate ? (
+          <CheckSquare size={15} className="text-accent-primary flex-shrink-0" />
+        ) : checked ? (
+          <CheckSquare size={15} className="text-accent-primary flex-shrink-0" />
+        ) : (
+          <Square size={15} className="text-text-secondary flex-shrink-0" />
+        )}
 
-            <span className="text-sm font-medium text-text-primary">{cat.name}</span>
-            {cat.tags.length > 0 && (
-              <span className="text-xs text-text-secondary ml-auto mr-1 flex-shrink-0">
-                {cat.tags.length}个标签
+        <span className="text-sm font-medium text-text-primary">{cat.name}</span>
+        {cat.tags.length > 0 && (
+          <span className="text-xs text-text-secondary ml-auto mr-1 flex-shrink-0">
+            {cat.tags.length}个标签
+          </span>
+        )}
+      </div>
+
+      {expanded && (
+        <>
+          {cat.tags.map(tag => (
+            <div
+              key={tag.id}
+              className="flex items-center gap-1.5 py-1.5 pr-3 rounded-xl cursor-pointer select-none transition-colors hover:bg-bg-secondary/50"
+              style={{ paddingLeft: `${(depth + 1) * 18 + 28}px` }}
+              onClick={() => toggleTag(cat.id, tag.id, !selected.has(tag.id))}
+            >
+              <span className="w-[18px] flex-shrink-0">
+                {selected.has(tag.id) ? (
+                  <CheckSquare size={15} className="text-accent-primary" />
+                ) : (
+                  <Square size={15} className="text-text-secondary" />
+                )}
               </span>
-            )}
-          </div>
-
-          {expanded && (
-            <>
-              {cat.tags.map(tag => (
-                <div
-                  key={tag.id}
-                  className="flex items-center gap-1.5 py-1.5 pr-3 rounded-xl cursor-pointer select-none transition-colors hover:bg-bg-secondary/50"
-                  style={{ paddingLeft: `${(depth + 1) * 18 + 28}px` }}
-                  onClick={() => toggleTag(cat.id, tag.id, !selected.has(tag.id))}
-                >
-                  <span className="w-[18px] flex-shrink-0">
-                    {selected.has(tag.id) ? (
-                      <CheckSquare size={15} className="text-accent-primary" />
-                    ) : (
-                      <Square size={15} className="text-text-secondary" />
-                    )}
-                  </span>
-                  <span className="text-sm text-text-secondary truncate">{tag.name}</span>
-                </div>
-              ))}
-              {renderTree(cat.children, depth + 1)}
-            </>
-          )}
-        </div>
-      );
-    });
-  };
-
-  return <>{renderTree(categories)}</>;
+              <span className="text-sm text-text-secondary truncate">{tag.name}</span>
+            </div>
+          ))}
+          {cat.children.map(child => (
+            <TreeNode
+              key={child.id}
+              cat={child}
+              depth={depth + 1}
+              selected={selected}
+              isCatChecked={isCatChecked}
+              isCatIndeterminate={isCatIndeterminate}
+              toggleCat={toggleCat}
+              toggleTag={toggleTag}
+            />
+          ))}
+        </>
+      )}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
