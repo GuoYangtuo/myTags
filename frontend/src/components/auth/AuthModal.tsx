@@ -26,7 +26,11 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
       setPassword('');
       setNickname('');
     } catch (err: any) {
-      setError(err?.response?.data?.error || '操作失败，请重试');
+      const raw = err?.response?.data?.error;
+      const msg = typeof raw === 'string'
+        ? raw
+        : raw?.message || '操作失败，请重试';
+      setError(msg);
     }
     setLoading(false);
   };
