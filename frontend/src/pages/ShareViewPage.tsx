@@ -158,13 +158,13 @@ export function ShareViewPage() {
           </div>
         </div>
 
-        {page.categories.length === 0 ? (
+        {(page.categories ?? []).length === 0 ? (
           <div className="text-center py-16 text-text-secondary">
             <p>这个页面还没有标签</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {page.categories.map((cat) => (
+            {(page.categories ?? []).map((cat) => (
               <PublicCategory key={cat.id} category={cat} />
             ))}
           </div>
