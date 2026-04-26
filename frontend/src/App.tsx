@@ -15,6 +15,7 @@ function AppLayout() {
   const { user } = useAuthStore();
   const { currentPage, fetchPages, fetchPage, setCurrentPage, confirmState } = usePageStore();
   const [shareOpen, setShareOpen] = useState(false);
+  const [sunburstOpen, setSunburstOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -34,16 +35,24 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-bg-primary">
       <Header />
-      <div className="flex">
-        {/* Desktop sidebar */}
-        <div className="hidden md:block">
-          <Sidebar />
-        </div>
+      <div className={`flex ${sunburstOpen ? 'h-[calc(100vh-57px)] overflow-hidden' : 'flex-1'}`}>
+        {/* Desktop sidebar — hidden in sunburst mode */}
+        {!sunburstOpen && (
+          <div className="hidden md:block">
+            <Sidebar />
+          </div>
+        )}
 
-        <PageEditor shareOpen={shareOpen} onShareOpen={() => setShareOpen(true)} onShareClose={() => setShareOpen(false)} />
+        <PageEditor
+          shareOpen={shareOpen}
+          onShareOpen={() => setShareOpen(true)}
+          onShareClose={() => setShareOpen(false)}
+          sunburstOpen={sunburstOpen}
+          onToggleSunburst={() => setSunburstOpen(v => !v)}
+        />
 
         {/* Mobile bottom navigation */}
-        <BottomNav onShare={() => setShareOpen(true)} />
+        <BottomNav onShare={() => setShareOpen(true)} onToggleSunburst={() => setSunburstOpen(v => !v)} />
       </div>
 
       {currentPage && (

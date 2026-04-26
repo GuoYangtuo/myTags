@@ -1,4 +1,4 @@
-import { Layers, Plus, Share2 } from 'lucide-react';
+import { Layers, Plus, Share2, CircleDot } from 'lucide-react';
 import { usePageStore } from '../../stores/pageStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useState } from 'react';
@@ -6,9 +6,10 @@ import { Modal, Input, Button } from '../ui';
 
 interface BottomNavProps {
   onShare?: () => void;
+  onToggleSunburst?: () => void;
 }
 
-export function BottomNav({ onShare }: BottomNavProps) {
+export function BottomNav({ onShare, onToggleSunburst }: BottomNavProps) {
   const { pages, currentPage, setCurrentPage, createPage, fetchPage } = usePageStore();
   const { user } = useAuthStore();
   const [showPageList, setShowPageList] = useState(false);
@@ -92,6 +93,14 @@ export function BottomNav({ onShare }: BottomNavProps) {
           >
             <Plus size={20} />
             <span className="text-[10px] font-medium">新建页面</span>
+          </button>
+
+          <button
+            onClick={onToggleSunburst}
+            className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl text-text-secondary hover:text-accent-primary transition-colors"
+          >
+            <CircleDot size={20} />
+            <span className="text-[10px] font-medium">旭日图</span>
           </button>
 
           <button

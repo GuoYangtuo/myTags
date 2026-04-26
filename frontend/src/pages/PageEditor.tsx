@@ -1,21 +1,23 @@
 import { useState, useMemo, useEffect } from 'react';
 import { usePageStore } from '../stores/pageStore';
-import { useAuthStore } from '../stores/authStore';
 import { CategoryTree } from '../components/category/CategoryTree';
 import { FocusBreadcrumb } from '../components/category/FocusBreadcrumb';
 import { QuickAddInput } from '../components/tag/QuickAddInput';
 import { TagCard } from '../components/tag/TagCard';
 import { ShareModal } from '../components/share/ShareModal';
+import { SunburstChart } from '../components/sunburst/SunburstChart';
 import { Button, Modal, Input } from '../components/ui';
-import { Settings, Share2, Globe, ArrowLeft } from 'lucide-react';
+import { Settings, Share2, Globe, ArrowLeft, CircleDot } from 'lucide-react';
 
 interface PageEditorProps {
   shareOpen: boolean;
   onShareOpen: () => void;
   onShareClose: () => void;
+  sunburstOpen: boolean;
+  onToggleSunburst: () => void;
 }
 
-export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorProps) {
+export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen, onToggleSunburst }: PageEditorProps) {
   const {
     currentPage,
     loading,
@@ -38,8 +40,8 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
     focusedCategoryId,
     unfocusCategory,
     focusCategory,
+    navigateFocusUp,
   } = usePageStore();
-  const { user } = useAuthStore();
   const [editDescOpen, setEditDescOpen] = useState(false);
   const [editDesc, setEditDesc] = useState('');
   const [editNameOpen, setEditNameOpen] = useState(false);
@@ -72,7 +74,6 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
 
   const isFocusMode = focusedCategoryId !== null;
 
-  // 在下潜模式下，用于显示的内容（直接子分类 + 标签）
   const focusDisplayCategories = useMemo(() => {
     if (!focusedCategory) return [];
     return focusedCategory.children ?? [];
@@ -83,7 +84,6 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
     return focusedCategory.tags ?? [];
   }, [focusedCategory]);
 
-  // 下潜模式下可用的所有分类（包括子孙，用于添加标签时选择分类）
   const focusAllCategories = useMemo(() => {
     const flat: any[] = [];
     const flatten = (cats: any[]) => {
@@ -96,7 +96,6 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
     return flat;
   }, [focusedCategory]);
 
-  // 全路径名称
   const displayPageName = focusedCategoryPath.length > 0
     ? focusedCategoryPath[focusedCategoryPath.length - 1].name
     : currentPage?.name ?? '';
@@ -131,128 +130,324 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
     createTag(categoryId, name, confidence, undefined, confidenceLabel);
   };
 
-  return (
-    <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
-        {isFocusMode && <FocusBreadcrumb />}
+  const handleSunburstUnfocus = () => {
+    unfocusCategory();
+  };
 
-        <div className="flex items-start justify-between mb-2 gap-3 mt-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl md:text-3xl font-bold font-heading truncate text-text-primary">
-                {displayPageName}
-              </h1>
-            </div>
-            {displayDescription && (
-              <p className="text-text-secondary text-sm">{displayDescription}</p>
-            )}
+  const handleSunburstUnfocusToParent = () => {
+    if (focusedCategoryPath.length > 1) {
+      const parentId = focusedCategoryPath[focusedCategoryPath.length - 2].id;
+      navigateFocusUp(parentId);
+    } else {
+      unfocusCategory();
+    }
+  };
+
+  const renderEditorContent = () => (
+    <>
+      {isFocusMode && <FocusBreadcrumb />}
+
+      <div className="flex items-start justify-between mb-2 gap-3 mt-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl md:text-2xl font-bold font-heading truncate text-text-primary">
+              {displayPageName}
+            </h1>
           </div>
+          {displayDescription && (
+            <p className="text-text-secondary text-sm">{displayDescription}</p>
+          )}
+        </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+          {isFocusMode ? (
+            <Button variant="secondary" size="sm" onClick={unfocusCategory}>
+              <ArrowLeft size={14} className="mr-1" />
+              <span className="hidden sm:inline">返回根页面</span>
+              <span className="sm:hidden">返回</span>
+            </Button>
+          ) : (
+            <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditName(currentPage.name); setEditDescOpen(true); }}>
+              <Settings size={14} className="mr-1" />
+              <span className="hidden sm:inline">页面信息</span>
+              <span className="sm:hidden">编辑</span>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {isFocusMode ? (
+        <>
+          <QuickAddInput
+            categories={focusDisplayCategories}
+            onAdd={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
+            onAddRoot={(name, confidence, confidenceLabel) => createRootTag(name, confidence, undefined, confidenceLabel)}
+          />
+
+          {focusDisplayTags.length > 0 && (
+            <div className="mb-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {focusDisplayTags.map((tag) => (
+                  <TagCard
+                    key={tag.id}
+                    tag={tag}
+                    onUpdate={(data) => { updateTag(tag.id, data); markDirty(); }}
+                    onDelete={() => { deleteTag(tag.id); markDirty(); }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <CategoryTree
+            categories={focusDisplayCategories}
+            allCategories={focusAllCategories}
+            onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
+            onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
+            onAddTag={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
+            onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
+            onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
+            onCreateCategory={(name, parentId) => createCategory(parentId, name)}
+            onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
+            onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
+            onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
+            onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
+            onFocusCategory={(categoryId) => focusCategory(categoryId)}
+          />
+        </>
+      ) : (
+        <>
+          <QuickAddInput
+            categories={currentPage.categories ?? []}
+            onAdd={handleAddTag}
+            onAddRoot={(name, confidence, confidenceLabel) => createRootTag(name, confidence, undefined, confidenceLabel)}
+          />
+
+          {(currentPage.rootTags ?? []).length > 0 && (
+            <div className="mb-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {(currentPage.rootTags ?? []).map((tag) => (
+                  <TagCard
+                    key={tag.id}
+                    tag={tag}
+                    onUpdate={(data) => { updateTag(tag.id, data); markDirty(); }}
+                    onDelete={() => { deleteTag(tag.id); markDirty(); }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <CategoryTree
+            categories={currentPage.categories ?? []}
+            allCategories={allCategories}
+            onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
+            onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
+            onAddTag={handleAddTag}
+            onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
+            onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
+            onCreateCategory={(name, parentId) => createCategory(parentId, name)}
+            onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
+            onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
+            onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
+            onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
+            onFocusCategory={(categoryId) => usePageStore.getState().focusCategory(categoryId)}
+          />
+        </>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      {/* Normal full-width layout */}
+      {!sunburstOpen && (
+        <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
+          <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
+            {isFocusMode && <FocusBreadcrumb />}
+
+            <div className="flex items-start justify-between mb-2 gap-3 mt-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl md:text-3xl font-bold font-heading truncate text-text-primary">
+                    {displayPageName}
+                  </h1>
+                </div>
+                {displayDescription && (
+                  <p className="text-text-secondary text-sm">{displayDescription}</p>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                {isFocusMode ? (
+                  <Button variant="secondary" size="sm" onClick={unfocusCategory}>
+                    <ArrowLeft size={14} className="mr-1" />
+                    <span className="hidden sm:inline">返回根页面</span>
+                    <span className="sm:hidden">返回</span>
+                  </Button>
+                ) : (
+                  <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditName(currentPage.name); setEditDescOpen(true); }}>
+                    <Settings size={14} className="mr-1" />
+                    <span className="hidden sm:inline">页面信息</span>
+                    <span className="sm:hidden">编辑</span>
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onToggleSunburst}
+                  className="hidden md:flex"
+                >
+                  <CircleDot size={14} className="mr-1" />
+                  旭日图
+                </Button>
+                {currentPage && (
+                  <Button variant="primary" size="sm" onClick={onShareOpen} className="hidden md:flex">
+                    <Share2 size={14} className="mr-1" />
+                    分享
+                  </Button>
+                )}
+              </div>
+            </div>
+
             {isFocusMode ? (
-              <Button variant="secondary" size="sm" onClick={unfocusCategory}>
-                <ArrowLeft size={14} className="mr-1" />
-                <span className="hidden sm:inline">返回根页面</span>
-                <span className="sm:hidden">返回</span>
-              </Button>
+              <>
+                <QuickAddInput
+                  categories={focusDisplayCategories}
+                  onAdd={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
+                  onAddRoot={(name, confidence, confidenceLabel) => createRootTag(name, confidence, undefined, confidenceLabel)}
+                />
+
+                {focusDisplayTags.length > 0 && (
+                  <div className="mb-4">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {focusDisplayTags.map((tag) => (
+                        <TagCard
+                          key={tag.id}
+                          tag={tag}
+                          onUpdate={(data) => { updateTag(tag.id, data); markDirty(); }}
+                          onDelete={() => { deleteTag(tag.id); markDirty(); }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <CategoryTree
+                  categories={focusDisplayCategories}
+                  allCategories={focusAllCategories}
+                  onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
+                  onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
+                  onAddTag={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
+                  onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
+                  onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
+                  onCreateCategory={(name, parentId) => createCategory(parentId, name)}
+                  onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
+                  onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
+                  onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
+                  onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
+                  onFocusCategory={(categoryId) => focusCategory(categoryId)}
+                />
+              </>
             ) : (
-              <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditName(currentPage.name); setEditDescOpen(true); }}>
-                <Settings size={14} className="mr-1" />
-                <span className="hidden sm:inline">页面信息</span>
-                <span className="sm:hidden">编辑</span>
-              </Button>
-            )}
-            {currentPage && (
-              <Button variant="primary" size="sm" onClick={onShareOpen} className="hidden md:flex">
-                <Share2 size={14} className="mr-1" />
-                分享
-              </Button>
+              <>
+                <QuickAddInput
+                  categories={currentPage.categories ?? []}
+                  onAdd={handleAddTag}
+                  onAddRoot={(name, confidence, confidenceLabel) => createRootTag(name, confidence, undefined, confidenceLabel)}
+                />
+
+                {(currentPage.rootTags ?? []).length > 0 && (
+                  <div className="mb-6">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {(currentPage.rootTags ?? []).map((tag) => (
+                        <TagCard
+                          key={tag.id}
+                          tag={tag}
+                          onUpdate={(data) => { updateTag(tag.id, data); markDirty(); }}
+                          onDelete={() => { deleteTag(tag.id); markDirty(); }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <CategoryTree
+                  categories={currentPage.categories ?? []}
+                  allCategories={allCategories}
+                  onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
+                  onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
+                  onAddTag={handleAddTag}
+                  onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
+                  onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
+                  onCreateCategory={(name, parentId) => createCategory(parentId, name)}
+                  onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
+                  onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
+                  onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
+                  onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
+                  onFocusCategory={(categoryId) => usePageStore.getState().focusCategory(categoryId)}
+                />
+              </>
             )}
           </div>
         </div>
+      )}
 
-        {isFocusMode ? (
-          <>
-            <QuickAddInput
-              categories={focusDisplayCategories}
-              onAdd={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
-              onAddRoot={(name, confidence, confidenceLabel) => createRootTag(name, confidence, undefined, confidenceLabel)}
-            />
-
-            {focusDisplayTags.length > 0 && (
-              <div className="mb-4">
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {focusDisplayTags.map((tag) => (
-                    <TagCard
-                      key={tag.id}
-                      tag={tag}
-                      onUpdate={(data) => { updateTag(tag.id, data); markDirty(); }}
-                      onDelete={() => { deleteTag(tag.id); markDirty(); }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <CategoryTree
-              categories={focusDisplayCategories}
-              allCategories={focusAllCategories}
-              onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
-              onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
-              onAddTag={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
-              onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
-              onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
-              onCreateCategory={(name, parentId) => createCategory(parentId, name)}
-              onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
-              onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
-              onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
-              onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
-              onFocusCategory={(categoryId) => focusCategory(categoryId)}
-            />
-          </>
-        ) : (
-          <>
-            <QuickAddInput
+      {/* Sunburst split-screen layout */}
+      {sunburstOpen && (
+        <div className="flex flex-1 overflow-hidden h-full">
+          {/* Left: Sunburst Chart (65%) */}
+          <div
+            className="relative h-full border-r-2 border-border-strong bg-bg-secondary/30 overflow-hidden"
+            style={{ width: '65%', flexShrink: 0 }}
+          >
+            <SunburstChart
               categories={currentPage.categories ?? []}
-              onAdd={handleAddTag}
-              onAddRoot={(name, confidence, confidenceLabel) => createRootTag(name, confidence, undefined, confidenceLabel)}
+              focusedCategoryId={focusedCategoryId}
+              focusedCategoryPath={focusedCategoryPath}
+              onFocusCategory={focusCategory}
+              onUnfocusCategory={handleSunburstUnfocus}
+              onUnfocusToParent={handleSunburstUnfocusToParent}
             />
+          </div>
 
-            {/* 无分类标签 */}
-            {(currentPage.rootTags ?? []).length > 0 && (
-              <div className="mb-6">
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {(currentPage.rootTags ?? []).map((tag) => (
-                    <TagCard
-                      key={tag.id}
-                      tag={tag}
-                      onUpdate={(data) => { updateTag(tag.id, data); markDirty(); }}
-                      onDelete={() => { deleteTag(tag.id); markDirty(); }}
-                    />
-                  ))}
-                </div>
+          {/* Right: Editor (35%) */}
+          <div
+            className="flex-1 overflow-y-auto pb-24 md:pb-6"
+            style={{ width: '35%' }}
+          >
+            {/* Header with toggle button */}
+            <div className="sticky top-0 z-10 bg-bg-primary border-b-2 border-border-light px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold font-heading text-sm text-text-primary truncate max-w-[200px]">
+                  {displayPageName}
+                </h2>
               </div>
-            )}
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onToggleSunburst}
+                  title="关闭旭日图"
+                >
+                  <CircleDot size={14} className="mr-1" />
+                  <span className="hidden sm:inline">旭日图</span>
+                </Button>
+                <Button variant="primary" size="sm" onClick={onShareOpen} className="hidden md:flex">
+                  <Share2 size={14} className="mr-1" />
+                  分享
+                </Button>
+              </div>
+            </div>
 
-            <CategoryTree
-              categories={currentPage.categories ?? []}
-              allCategories={allCategories}
-              onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
-              onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
-              onAddTag={handleAddTag}
-              onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
-              onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
-              onCreateCategory={(name, parentId) => createCategory(parentId, name)}
-              onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
-              onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
-              onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
-              onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
-              onFocusCategory={(categoryId) => usePageStore.getState().focusCategory(categoryId)}
-            />
-          </>
-        )}
-      </div>
+            <div className="px-4 py-4">
+              {renderEditorContent()}
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* Share Modal */}
       {!isFocusMode && currentPage && (
         <ShareModal open={shareOpen} onClose={onShareClose} page={currentPage} />
       )}
@@ -276,6 +471,6 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
           </Button>
         </div>
       </Modal>
-    </div>
+    </>
   );
 }
