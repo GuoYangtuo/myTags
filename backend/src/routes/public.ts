@@ -74,12 +74,36 @@ router.get('/share/:code', async (req: Request, res: Response) => {
       return;
     }
 
+    // 解析 visibleItems，null = 显示全部
+    let visibleIds: number[] | null = null;
+    if (share.visibleItems) {
+      try {
+        visibleIds = JSON.parse(share.visibleItems);
+      } catch {
+        visibleIds = null;
+      }
+    }
+
     // 解析 content JSON
     let pageContent: PageContent = { categories: [] };
     try {
       pageContent = JSON.parse(share.page.content);
     } catch {
       pageContent = { categories: [] };
+    }
+
+    // 如果设置了可见范围，过滤分类
+    if (visibleIds !== null) {
+      const filterCategories = (cats: CategoryData[]): CategoryData[] => {
+        return cats
+          .filter((c) => visibleIds!.includes(c.id))
+          .map((c) => ({
+            ...c,
+            children: filterCategories(c.children),
+            tags: c.tags.filter((t) => visibleIds!.includes(t.id)),
+          }));
+      };
+      pageContent.categories = filterCategories(pageContent.categories);
     }
 
     res.json({

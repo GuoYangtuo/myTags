@@ -40,6 +40,7 @@ export interface Share {
   pageId: number;
   shareCode: string;
   expiresAt: string | null;
+  visibleItems: number[] | null;
   createdAt: string;
   page?: { id: number; name: string };
 }
@@ -52,6 +53,7 @@ export interface ShareData {
 export interface CreateSharePayload {
   pageId: number;
   expiresAt?: string | null;
+  visibleItems?: number[];
 }
 
 export interface PublicUser {

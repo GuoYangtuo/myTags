@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import type { Page } from '../../types';
+import { useState, useEffect, useCallback } from 'react';
+import type { Page, Category, Tag } from '../../types';
 import { Modal, Button } from '../ui';
-import { Share, Copy, Check, Clock, Trash2 } from 'lucide-react';
+import { Share, Copy, Check, Clock, Trash2, CheckSquare, Square, ChevronRight } from 'lucide-react';
 import { shareApi } from '../../api/shares';
 import type { Share as ShareType } from '../../types';
 import { formatDate } from '../../utils/helpers';
+import { usePageStore } from '../../stores/pageStore';
 
 interface ShareModalProps {
   open: boolean;
@@ -12,19 +13,183 @@ interface ShareModalProps {
   page: Page;
 }
 
+type VisibilityMode = 'all' | 'partial';
+
+function collectAllIds(categories: Category[]): number[] {
+  const ids: number[] = [];
+  const traverse = (cats: Category[]) => {
+    for (const c of cats) {
+      ids.push(c.id);
+      for (const t of c.tags) ids.push(t.id);
+      traverse(c.children);
+    }
+  };
+  traverse(categories);
+  return ids;
+}
+
+interface VisibilityPickerProps {
+  categories: Category[];
+  selected: Set<number>;
+  onChange: (next: Set<number>) => void;
+}
+
+function VisibilityPicker({ categories, selected, onChange }: VisibilityPickerProps) {
+  const toggleCat = useCallback((cat: Category, checked: boolean) => {
+    const ids = new Set(selected);
+    const apply = (c: Category) => {
+      if (checked) ids.add(c.id);
+      else ids.delete(c.id);
+      for (const t of c.tags) {
+        if (checked) ids.add(t.id);
+        else ids.delete(t.id);
+      }
+      for (const child of c.children) apply(child);
+    };
+    apply(cat);
+    onChange(ids);
+  }, [selected, onChange]);
+
+  const toggleTag = useCallback((catId: number, tagId: number, checked: boolean) => {
+    const ids = new Set(selected);
+    if (checked) {
+      ids.add(tagId);
+      // auto-check parent if all children are selected
+      const parent = findCategory(categories, catId);
+      if (parent) {
+        const allSelected = parent.tags.every(t => t.id === tagId || ids.has(t.id));
+        if (allSelected) ids.add(catId);
+      }
+    } else {
+      ids.delete(tagId);
+      ids.delete(catId);
+    }
+    onChange(ids);
+  }, [selected, onChange, categories]);
+
+  const findCategory = (cats: Category[], id: number): Category | undefined => {
+    for (const c of cats) {
+      if (c.id === id) return c;
+      const found = findCategory(c.children, id);
+      if (found) return found;
+    }
+    return undefined;
+  };
+
+  const isCatChecked = (cat: Category): boolean => {
+    const allIds = [cat.id, ...cat.tags.map(t => t.id)];
+    return allIds.every(id => selected.has(id));
+  };
+
+  const isCatIndeterminate = (cat: Category): boolean => {
+    const allIds = [cat.id, ...cat.tags.map(t => t.id)];
+    const checkedCount = allIds.filter(id => selected.has(id)).length;
+    return checkedCount > 0 && checkedCount < allIds.length;
+  };
+
+  const renderTree = (cats: Category[], depth = 0) => {
+    return cats.map(cat => {
+      const checked = isCatChecked(cat);
+      const indeterminate = isCatIndeterminate(cat);
+      const [expanded, setExpanded] = useState(true);
+
+      return (
+        <div key={cat.id}>
+          <div
+            className={`flex items-center gap-2 py-1.5 rounded-lg px-2 hover:bg-bg-secondary transition-colors cursor-pointer select-none`}
+            style={{ paddingLeft: `${depth * 16 + 8}px` }}
+            onClick={() => toggleCat(cat, !checked)}
+          >
+            {cat.children.length > 0 || cat.tags.length > 0 ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); setExpanded(x => !x); }}
+                className="p-0.5 rounded hover:bg-border-light/50 flex-shrink-0"
+              >
+                <ChevronRight
+                  size={14}
+                  className={`text-text-secondary transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
+                />
+              </button>
+            ) : (
+              <span className="w-[18px] flex-shrink-0" />
+            )}
+
+            {indeterminate ? (
+              <CheckSquare size={16} className="text-accent-primary flex-shrink-0" />
+            ) : checked ? (
+              <CheckSquare size={16} className="text-accent-primary flex-shrink-0" />
+            ) : (
+              <Square size={16} className="text-text-secondary flex-shrink-0" />
+            )}
+
+            <span className="text-sm font-medium text-text-primary">{cat.name}</span>
+            <span className="text-xs text-text-secondary ml-auto mr-1">
+              {cat.tags.length > 0 ? `${cat.tags.length} 个标签` : ''}
+            </span>
+          </div>
+
+          {expanded && (
+            <>
+              {cat.tags.map(tag => (
+                <div
+                  key={tag.id}
+                  className="flex items-center gap-2 py-1 rounded-lg px-2 hover:bg-bg-secondary/50 transition-colors cursor-pointer select-none"
+                  style={{ paddingLeft: `${(depth + 1) * 16 + 26}px` }}
+                  onClick={() => toggleTag(cat.id, tag.id, !selected.has(tag.id))}
+                >
+                  <span className="w-[18px] flex-shrink-0">
+                    {selected.has(tag.id) ? (
+                      <CheckSquare size={16} className="text-accent-primary" />
+                    ) : (
+                      <Square size={16} className="text-text-secondary" />
+                    )}
+                  </span>
+                  <span className="text-sm text-text-secondary">{tag.name}</span>
+                </div>
+              ))}
+              {renderTree(cat.children, depth + 1)}
+            </>
+          )}
+        </div>
+      );
+    });
+  };
+
+  return (
+    <div className="border border-border-light rounded-xl overflow-hidden">
+      {renderTree(categories)}
+    </div>
+  );
+}
+
 export function ShareModal({ open, onClose, page }: ShareModalProps) {
+  const currentPage = usePageStore(s => s.currentPage);
   const [expiry, setExpiry] = useState<string>('permanent');
   const [customDate, setCustomDate] = useState('');
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [shares, setShares] = useState<ShareType[]>([]);
   const [loading, setLoading] = useState(false);
+  const [visibilityMode, setVisibilityMode] = useState<VisibilityMode>('all');
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (open) {
       loadShares();
     }
   }, [open, page]);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (open) {
+      setGeneratedLink(null);
+      setCopied(false);
+      setExpiry('permanent');
+      setCustomDate('');
+      setVisibilityMode('all');
+      setSelectedItems(new Set());
+    }
+  }, [open]);
 
   const loadShares = async () => {
     try {
@@ -51,10 +216,14 @@ export function ShareModal({ open, onClose, page }: ShareModalProps) {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const data = await shareApi.create({
+      const payload: { pageId: number; expiresAt: string | null; visibleItems?: number[] } = {
         pageId: page.id,
         expiresAt: getExpiryDate(),
-      });
+      };
+      if (visibilityMode === 'partial' && selectedItems.size > 0) {
+        payload.visibleItems = Array.from(selectedItems);
+      }
+      const data = await shareApi.create(payload);
       const url = `${window.location.origin}/share/${data.shareCode}`;
       setGeneratedLink(url);
       loadShares();
@@ -73,6 +242,18 @@ export function ShareModal({ open, onClose, page }: ShareModalProps) {
   const handleDeleteShare = async (id: number) => {
     await shareApi.delete(id);
     loadShares();
+  };
+
+  const categories = currentPage?.categories ?? page.categories ?? [];
+  const hasCategories = categories.length > 0;
+  const allIds = collectAllIds(categories);
+
+  const handleSelectAll = () => {
+    setSelectedItems(new Set(allIds));
+  };
+
+  const handleSelectNone = () => {
+    setSelectedItems(new Set());
   };
 
   return (
@@ -124,6 +305,70 @@ export function ShareModal({ open, onClose, page }: ShareModalProps) {
           </div>
         ) : (
           <>
+            {hasCategories && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-bold flex items-center gap-2">
+                    <CheckSquare size={16} />
+                    可见范围
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setVisibilityMode('all')}
+                      className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                        visibilityMode === 'all'
+                          ? 'bg-accent-primary text-white border-accent-primary'
+                          : 'bg-bg-card text-text-secondary border-border-light hover:border-border-strong'
+                      }`}
+                    >
+                      全部
+                    </button>
+                    <button
+                      onClick={() => setVisibilityMode('partial')}
+                      className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                        visibilityMode === 'partial'
+                          ? 'bg-accent-primary text-white border-accent-primary'
+                          : 'bg-bg-card text-text-secondary border-border-light hover:border-border-strong'
+                      }`}
+                    >
+                      自定义
+                    </button>
+                  </div>
+                </div>
+
+                {visibilityMode === 'all' ? (
+                  <div className="p-3 bg-bg-secondary rounded-xl text-sm text-text-secondary text-center">
+                    将分享此页面的全部标签
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSelectAll}
+                        className="text-xs px-2 py-1 rounded border border-border-light text-text-secondary hover:border-border-strong hover:text-text-primary transition-colors"
+                      >
+                        全选
+                      </button>
+                      <button
+                        onClick={handleSelectNone}
+                        className="text-xs px-2 py-1 rounded border border-border-light text-text-secondary hover:border-border-strong hover:text-text-primary transition-colors"
+                      >
+                        清空
+                      </button>
+                      <span className="text-xs text-text-secondary ml-auto self-center">
+                        已选 {selectedItems.size} 项
+                      </span>
+                    </div>
+                    <VisibilityPicker
+                      categories={categories}
+                      selected={selectedItems}
+                      onChange={setSelectedItems}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-bold mb-3 flex items-center gap-2">
                 <Clock size={16} />

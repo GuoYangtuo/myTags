@@ -11,6 +11,7 @@ router.use(authMiddleware);
 const createShareSchema = z.object({
   pageId: z.number(),
   expiresAt: z.string().datetime().nullable().optional(),
+  visibleItems: z.array(z.number()).optional(),
 });
 
 router.post('/', async (req: AuthRequest, res: Response) => {
@@ -31,6 +32,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         pageId: data.pageId,
         shareCode,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+        visibleItems: data.visibleItems ? JSON.stringify(data.visibleItems) : null,
       },
     });
 
