@@ -152,6 +152,7 @@ export function SunburstChart({
   focusedCategoryPath,
 }: SunburstChartProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 600 });
 
@@ -317,13 +318,18 @@ export function SunburstChart({
                     d={pathD}
                     fill={arc.color}
                     stroke="#FFFFFF"
-                    strokeWidth={isHovered ? 2.5 : 1.5}
+                    strokeWidth={isHovered ? 4 : 1.5}
                     style={{
                       cursor: arc.node.type === 'category' && arc.node.children && arc.node.children.length > 0 ? 'pointer' : 'default',
-                      filter: isHovered ? 'drop-shadow(0 3px 6px rgba(0,0,0,0.22))' : undefined,
-                      transition: 'filter 150ms, stroke-width 150ms',
+                      filter: isHovered
+                        ? 'drop-shadow(0 4px 10px rgba(0,0,0,0.40)) brightness(1.12)'
+                        : undefined,
+                      transform: isHovered ? 'scale(1.025)' : undefined,
+                      transformOrigin: `${cx}px ${cy}px`,
+                      transition: 'filter 150ms, stroke-width 150ms, transform 150ms',
                     }}
-                    onMouseEnter={() => setHoveredIdx(idx)}
+                    onMouseEnter={(e) => { setHoveredIdx(idx); setMousePos({ x: e.clientX, y: e.clientY }); }}
+                    onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setHoveredIdx(null)}
                     onClick={() => handleArcClick(arc)}
                   />
@@ -345,8 +351,8 @@ export function SunburstChart({
                       </text>
                       {arc.node.type === 'tag' && (
                         <text
-                          x={polarToCartesian(cx, cy, midR + ringWidth * 0.12, arc.midAngle).x}
-                          y={polarToCartesian(cx, cy, midR + ringWidth * 0.12, arc.midAngle).y}
+                          x={polarToCartesian(cx, cy, midR, arc.midAngle).x}
+                          y={polarToCartesian(cx, cy, midR, arc.midAngle).y + 13}
                           textAnchor="middle"
                           dominantBaseline="middle"
                           fill="rgba(255,255,255,0.80)"
@@ -408,14 +414,13 @@ export function SunburstChart({
           </button>
         </div>
 
-        {/* Tooltip — only shown when arc is too small for a label */}
+        {/* Tooltip — follows mouse near the arc */}
         {hoveredArc && (hoveredArc.endAngle - hoveredArc.startAngle) <= 15 && (
           <div
             className="absolute bg-bg-card border-2 border-border-strong rounded-xl shadow-[3px_3px_0_var(--color-border-strong)] px-3 py-2.5 min-w-[140px] max-w-[220px] pointer-events-none z-10"
             style={{
-              top: Math.min(cy + maxRadius * 0.55, dims.height - 90),
-              left: cx,
-              transform: 'translateX(-50%)',
+              top: mousePos.y - containerRef.current!.getBoundingClientRect().top + 12,
+              left: mousePos.x - containerRef.current!.getBoundingClientRect().left + 12,
             }}
           >
             <div className="flex items-center gap-2 mb-0.5">
