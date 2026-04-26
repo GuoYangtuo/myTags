@@ -152,7 +152,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
             {isFocusMode ? (
               <Button variant="secondary" size="sm" onClick={unfocusCategory}>
                 <ArrowLeft size={14} className="mr-1" />
-                <span className="hidden sm:inline">返回主页面</span>
+                <span className="hidden sm:inline">返回根页面</span>
                 <span className="sm:hidden">返回</span>
               </Button>
             ) : (
@@ -209,16 +209,6 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
               onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
               onFocusCategory={(categoryId) => focusCategory(categoryId)}
             />
-
-            {focusDisplayCategories.length === 0 && focusDisplayTags.length === 0 && (
-              <div className="text-center py-12 text-text-secondary">
-                <div className="mb-3 opacity-40">
-                  <Settings size={40} className="mx-auto" />
-                </div>
-                还没有子分类或标签<br />
-                <span className="text-sm">使用上方输入框添加标签</span>
-              </div>
-            )}
           </>
         ) : (
           <>

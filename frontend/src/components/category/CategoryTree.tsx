@@ -3,7 +3,7 @@ import type { Category, Tag } from '../../types';
 import { TagCard } from '../tag/TagCard';
 import { ConfidenceSlider } from '../tag/ConfidenceSlider';
 import { usePageStore } from '../../stores/pageStore';
-import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus, GripVertical, ArrowDownRight } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus, GripVertical, ArrowDownRight, TagIcon } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
@@ -645,10 +645,10 @@ export function CategoryTree({
       {categories.length === 0 && !showAddRoot && (
         <div className="text-center py-12 text-text-secondary">
           <div className="mb-3 opacity-40">
-            <FolderPlus size={40} className="mx-auto" />
+            <TagIcon size={40} className="mx-auto" />
           </div>
-          还没有分类标签<br />
-          <span className="text-sm">点击上方按钮创建第一个分类</span>
+          暂无分类或标签<br />
+          <span className="text-sm">快创建你的第一个标签吧</span>
         </div>
       )}
     </div>
