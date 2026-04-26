@@ -7,7 +7,7 @@ import { QuickAddInput } from '../components/tag/QuickAddInput';
 import { TagCard } from '../components/tag/TagCard';
 import { ShareModal } from '../components/share/ShareModal';
 import { Button, Modal, Input } from '../components/ui';
-import { Settings, Share2, Globe } from 'lucide-react';
+import { Settings, Share2, Globe, ArrowLeft } from 'lucide-react';
 
 interface PageEditorProps {
   shareOpen: boolean;
@@ -150,8 +150,8 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
           <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
             {isFocusMode ? (
               <Button variant="secondary" size="sm" onClick={unfocusCategory}>
-                <Settings size={14} className="mr-1" />
-                <span className="hidden sm:inline">返回页面</span>
+                <ArrowLeft size={14} className="mr-1" />
+                <span className="hidden sm:inline">返回主页面</span>
                 <span className="sm:hidden">返回</span>
               </Button>
             ) : (

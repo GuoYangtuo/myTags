@@ -17,7 +17,7 @@ export function BottomNav({ onShare }: BottomNavProps) {
 
   const handleCreate = async () => {
     if (!newPageName.trim()) return;
-    const page = await createPage(newPageName.trim(), `@${user?.nickname} 的标签页面`);
+    const page = await createPage(newPageName.trim(), `@${user?.nickname} 的标签 & 人设`);
     setNewPageName('');
     setShowNewPage(false);
     setCurrentPage(page);

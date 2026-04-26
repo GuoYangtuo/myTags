@@ -261,7 +261,7 @@ function SortableCategoryNodeInner({
               <Edit2 size={14} className="text-text-secondary" />
             </button>
             <button
-              onClick={() => showConfirm({ title: '删除分类', message: `确定删除分类「${category.name}」吗？`, onConfirm: () => onDeleteCategory(category.id) })}
+              onClick={() => showConfirm({ title: '删除分类', message: `确定删除分类「${category.name}」及所有子分类和标签吗？`, onConfirm: () => onDeleteCategory(category.id) })}
               className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
             >
               <Trash2 size={14} />
