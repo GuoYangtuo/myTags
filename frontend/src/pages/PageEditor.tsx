@@ -2,7 +2,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { usePageStore } from '../stores/pageStore';
 import { useAuthStore } from '../stores/authStore';
 import { CategoryTree } from '../components/category/CategoryTree';
+import { FocusBreadcrumb } from '../components/category/FocusBreadcrumb';
 import { QuickAddInput } from '../components/tag/QuickAddInput';
+import { TagCard } from '../components/tag/TagCard';
 import { ShareModal } from '../components/share/ShareModal';
 import { Button, Modal, Input } from '../components/ui';
 import { Settings, Share2, Globe } from 'lucide-react';
@@ -30,6 +32,11 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
     markDirty,
     moveTag,
     moveCategory,
+    focusedCategory,
+    focusedCategoryPath,
+    focusedCategoryId,
+    unfocusCategory,
+    focusCategory,
   } = usePageStore();
   const { user } = useAuthStore();
   const [editDescOpen, setEditDescOpen] = useState(false);
@@ -62,6 +69,39 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
     return flat;
   }, [currentPage?.categories]);
 
+  const isFocusMode = focusedCategoryId !== null;
+
+  // 在下潜模式下，用于显示的内容（直接子分类 + 标签）
+  const focusDisplayCategories = useMemo(() => {
+    if (!focusedCategory) return [];
+    return focusedCategory.children ?? [];
+  }, [focusedCategory]);
+
+  const focusDisplayTags = useMemo(() => {
+    if (!focusedCategory) return [];
+    return focusedCategory.tags ?? [];
+  }, [focusedCategory]);
+
+  // 下潜模式下可用的所有分类（包括子孙，用于添加标签时选择分类）
+  const focusAllCategories = useMemo(() => {
+    const flat: any[] = [];
+    const flatten = (cats: any[]) => {
+      for (const cat of cats) {
+        flat.push(cat);
+        if (cat.children) flatten(cat.children);
+      }
+    };
+    flatten(focusedCategory?.children ?? []);
+    return flat;
+  }, [focusedCategory]);
+
+  // 全路径名称
+  const displayPageName = focusedCategoryPath.length > 0
+    ? focusedCategoryPath[focusedCategoryPath.length - 1].name
+    : currentPage?.name ?? '';
+
+  const displayDescription = focusedCategory?.description ?? currentPage?.description ?? '';
+
   if (loading && currentPage) {
     return (
       <div className="flex-1 flex items-center justify-center text-text-secondary">
@@ -93,56 +133,120 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
   return (
     <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
+        {isFocusMode && <FocusBreadcrumb />}
+
         <div className="flex items-start justify-between mb-4 gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <button
-                onClick={() => { setEditName(currentPage.name); setEditNameOpen(true); }}
-                className="text-2xl md:text-3xl font-bold font-heading truncate hover:text-accent-primary transition-colors"
-              >
-                {currentPage.name}
-              </button>
+              <h1 className="text-2xl md:text-3xl font-bold font-heading truncate text-text-primary">
+                {displayPageName}
+              </h1>
             </div>
-            {currentPage.description && (
-              <p className="text-text-secondary text-sm">{currentPage.description}</p>
+            {displayDescription && (
+              <p className="text-text-secondary text-sm">{displayDescription}</p>
             )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-            <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditName(currentPage.name); setEditDescOpen(true); }}>
-              <Settings size={14} className="mr-1" />
-              <span className="hidden sm:inline">页面信息</span>
-              <span className="sm:hidden">编辑</span>
-            </Button>
-            <Button variant="primary" size="sm" onClick={onShareOpen} className="hidden md:flex">
-              <Share2 size={14} className="mr-1" />
-              分享
-            </Button>
+            {isFocusMode ? (
+              <Button variant="secondary" size="sm" onClick={unfocusCategory}>
+                <Settings size={14} className="mr-1" />
+                <span className="hidden sm:inline">返回页面</span>
+                <span className="sm:hidden">返回</span>
+              </Button>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={() => { setEditDesc(currentPage.description); setEditName(currentPage.name); setEditDescOpen(true); }}>
+                <Settings size={14} className="mr-1" />
+                <span className="hidden sm:inline">页面信息</span>
+                <span className="sm:hidden">编辑</span>
+              </Button>
+            )}
+            {!isFocusMode && currentPage && (
+              <Button variant="primary" size="sm" onClick={onShareOpen} className="hidden md:flex">
+                <Share2 size={14} className="mr-1" />
+                分享
+              </Button>
+            )}
           </div>
         </div>
 
-        <QuickAddInput
-          categories={currentPage.categories ?? []}
-          onAdd={handleAddTag}
-        />
+        {isFocusMode ? (
+          <>
+            <QuickAddInput
+              categories={focusDisplayCategories}
+              onAdd={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
+            />
 
-        <CategoryTree
-          categories={currentPage.categories ?? []}
-          allCategories={allCategories}
-          onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
-          onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
-          onAddTag={handleAddTag}
-          onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
-          onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
-          onCreateCategory={(name, parentId) => createCategory(parentId, name)}
-          onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
-          onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
-          onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
-          onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
-        />
+            {focusDisplayTags.length > 0 && (
+              <div className="mb-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {focusDisplayTags.map((tag) => (
+                    <TagCard
+                      key={tag.id}
+                      tag={tag}
+                      onUpdate={(data) => { updateTag(tag.id, data); markDirty(); }}
+                      onDelete={() => { deleteTag(tag.id); markDirty(); }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <CategoryTree
+              categories={focusDisplayCategories}
+              allCategories={focusAllCategories}
+              onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
+              onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
+              onAddTag={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
+              onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
+              onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
+              onCreateCategory={(name, parentId) => createCategory(parentId, name)}
+              onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
+              onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
+              onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
+              onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
+              onFocusCategory={(categoryId) => focusCategory(categoryId)}
+            />
+
+            {focusDisplayCategories.length === 0 && focusDisplayTags.length === 0 && (
+              <div className="text-center py-12 text-text-secondary">
+                <div className="mb-3 opacity-40">
+                  <Settings size={40} className="mx-auto" />
+                </div>
+                还没有子分类或标签<br />
+                <span className="text-sm">使用上方输入框添加标签</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <QuickAddInput
+              categories={currentPage.categories ?? []}
+              onAdd={handleAddTag}
+            />
+
+            <CategoryTree
+              categories={currentPage.categories ?? []}
+              allCategories={allCategories}
+              onUpdateTag={(tagId, data) => { updateTag(tagId, data); markDirty(); }}
+              onDeleteTag={(tagId) => { deleteTag(tagId); markDirty(); }}
+              onAddTag={handleAddTag}
+              onUpdateCategory={(id, data) => { updateCategory(id, data); markDirty(); }}
+              onDeleteCategory={(id) => { deleteCategory(id); markDirty(); }}
+              onCreateCategory={(name, parentId) => createCategory(parentId, name)}
+              onReorderTags={(categoryId, tagIds) => { reorderTags(categoryId, tagIds); markDirty(); }}
+              onReorderCategories={(parentId, categoryIds) => { reorderCategories(parentId, categoryIds); markDirty(); }}
+              onMoveTag={(tagId, targetCategoryId) => { moveTag(tagId, targetCategoryId); markDirty(); }}
+              onMoveCategory={(catId, newParentId) => { moveCategory(catId, newParentId); markDirty(); }}
+              onFocusCategory={(categoryId) => usePageStore.getState().focusCategory(categoryId)}
+            />
+          </>
+        )}
       </div>
 
-      <ShareModal open={shareOpen} onClose={onShareClose} page={currentPage} />
+      {!isFocusMode && currentPage && (
+        <ShareModal open={shareOpen} onClose={onShareClose} page={currentPage} />
+      )}
 
       <Modal open={editDescOpen} onClose={() => setEditDescOpen(false)} title="编辑页面信息" size="sm">
         <div className="space-y-4">

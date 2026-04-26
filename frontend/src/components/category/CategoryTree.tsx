@@ -3,7 +3,7 @@ import type { Category, Tag } from '../../types';
 import { TagCard } from '../tag/TagCard';
 import { ConfidenceSlider } from '../tag/ConfidenceSlider';
 import { usePageStore } from '../../stores/pageStore';
-import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus, GripVertical } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Edit2, Trash2, FolderPlus, GripVertical, ArrowDownRight } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
@@ -32,6 +32,7 @@ interface CategoryTreeProps {
   onReorderCategories: (parentId: number | null, categoryIds: number[]) => void;
   onMoveTag: (tagId: number, targetCategoryId: number) => void;
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
+  onFocusCategory?: (categoryId: number) => void;
 }
 
 function SortableTagCardInner({ tag, onUpdate, onDelete, activeItemId }: {
@@ -90,6 +91,7 @@ function SortableCategoryNodeInner({
   onReorderCategories,
   onMoveTag,
   onMoveCategory,
+  onFocusCategory,
   activeItemId,
 }: {
   category: Category;
@@ -105,6 +107,7 @@ function SortableCategoryNodeInner({
   onReorderCategories: (parentId: number | null, categoryIds: number[]) => void;
   onMoveTag: (tagId: number, targetCategoryId: number) => void;
   onMoveCategory: (categoryId: number, newParentId: number | null) => void;
+  onFocusCategory?: (categoryId: number) => void;
   activeItemId: string | null;
 }) {
   const { showConfirm } = usePageStore();
@@ -241,6 +244,13 @@ function SortableCategoryNodeInner({
           )}
 
           <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onFocusCategory && onFocusCategory(category.id)}
+              className="p-1.5 rounded-lg hover:bg-accent-secondary/20 transition-colors"
+              title="下潜到该分类"
+            >
+              <ArrowDownRight size={14} className="text-accent-secondary" />
+            </button>
             <button onClick={() => setShowAddChild(true)} className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors" title="添加子分类">
               <FolderPlus size={14} className="text-accent-secondary" />
             </button>
@@ -350,6 +360,7 @@ function SortableCategoryNodeInner({
               onReorderCategories={onReorderCategories}
               onMoveTag={onMoveTag}
               onMoveCategory={onMoveCategory}
+              onFocusCategory={onFocusCategory}
               activeItemId={activeItemId}
             />
           ))}
@@ -412,6 +423,7 @@ export function CategoryTree({
   onReorderCategories,
   onMoveTag,
   onMoveCategory,
+  onFocusCategory,
 }: CategoryTreeProps) {
   const { showConfirm } = usePageStore();
   const [showAddRoot, setShowAddRoot] = useState(false);
@@ -585,6 +597,7 @@ export function CategoryTree({
           onReorderCategories={onReorderCategories}
           onMoveTag={onMoveTag}
           onMoveCategory={onMoveCategory}
+          onFocusCategory={onFocusCategory}
           activeItemId={activeItemId}
         />
       ))}

@@ -11,6 +11,11 @@ interface PageState {
   isDirty: boolean;  // 是否有未保存的更改
   nextId: number;    // 为新创建的分类/标签生成唯一 ID
 
+  // 分类下潜功能
+  focusedCategoryId: number | null;
+  focusedCategory: Category | null;
+  focusedCategoryPath: Array<{ id: number; name: string }>;
+
   fetchPages: () => Promise<void>;
   fetchPage: (id: number) => Promise<void>;
   createPage: (name: string, description?: string) => Promise<Page>;
@@ -18,6 +23,11 @@ interface PageState {
   deletePage: (id: number) => Promise<void>;
   setCurrentPage: (page: Page | null) => void;
   isPageLoaded: (id: number) => boolean;
+
+  // 分类下潜
+  focusCategory: (categoryId: number) => void;
+  unfocusCategory: () => void;
+  navigateFocusUp: (targetId: number) => void;
 
   // 保存页面内容（手动保存）
   saveContent: () => Promise<void>;
@@ -65,6 +75,10 @@ export const usePageStore = create<PageState>((set, get) => ({
   saving: false,
   isDirty: false,
   nextId: generateId(),
+
+  focusedCategoryId: null,
+  focusedCategory: null,
+  focusedCategoryPath: [],
 
   confirmState: {
     open: false,
@@ -148,16 +162,102 @@ export const usePageStore = create<PageState>((set, get) => ({
 
   setCurrentPage: (page) => {
     if (!page) {
-      set({ currentPage: null, isDirty: false });
+      set({ currentPage: null, isDirty: false, focusedCategoryId: null, focusedCategory: null, focusedCategoryPath: [] });
       return;
     }
     const state = get();
     const fullPage = state.loadedPages[page.id];
-    set({ currentPage: fullPage ?? page, isDirty: false });
+    set({ currentPage: fullPage ?? page, isDirty: false, focusedCategoryId: null, focusedCategory: null, focusedCategoryPath: [] });
   },
 
   isPageLoaded: (id: number) => {
     return !!get().loadedPages[id];
+  },
+
+  // ==================== 分类下潜 ====================
+
+  focusCategory: (categoryId: number) => {
+    const { currentPage } = get();
+    if (!currentPage) return;
+
+    // 在整棵树中查找指定分类
+    const findCategory = (cats: Category[]): Category | null => {
+      for (const cat of cats) {
+        if (cat.id === categoryId) return cat;
+        const found = findCategory(cat.children ?? []);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    // 查找分类的路径（从根到该分类）
+    const findPath = (cats: Category[], targetId: number, path: Array<{ id: number; name: string }>): boolean => {
+      for (const cat of cats) {
+        if (cat.id === targetId) {
+          path.push({ id: cat.id, name: cat.name });
+          return true;
+        }
+        path.push({ id: cat.id, name: cat.name });
+        if (findPath(cat.children ?? [], targetId, path)) {
+          return true;
+        }
+        path.pop();
+      }
+      return false;
+    };
+
+    const category = findCategory(currentPage.categories ?? []);
+    if (!category) return;
+
+    const path: Array<{ id: number; name: string }> = [];
+    findPath(currentPage.categories ?? [], categoryId, path);
+
+    set({
+      focusedCategoryId: categoryId,
+      focusedCategory: category,
+      focusedCategoryPath: path,
+    });
+  },
+
+  unfocusCategory: () => {
+    set({
+      focusedCategoryId: null,
+      focusedCategory: null,
+      focusedCategoryPath: [],
+    });
+  },
+
+  navigateFocusUp: (targetId: number) => {
+    const { focusedCategoryPath, currentPage } = get();
+    if (!currentPage) return;
+
+    if (targetId === -1) {
+      set({ focusedCategoryId: null, focusedCategory: null, focusedCategoryPath: [] });
+      return;
+    }
+
+    const idx = focusedCategoryPath.findIndex(p => p.id === targetId);
+    if (idx === -1) return;
+
+    // 截断路径到目标位置
+    const newPath = focusedCategoryPath.slice(0, idx + 1);
+
+    // 重新查找该分类
+    const findCategory = (cats: Category[]): Category | null => {
+      for (const cat of cats) {
+        if (cat.id === targetId) return cat;
+        const found = findCategory(cat.children ?? []);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const category = findCategory(currentPage.categories ?? []);
+    set({
+      focusedCategoryId: targetId,
+      focusedCategory: category,
+      focusedCategoryPath: newPath,
+    });
   },
 
   saveContent: async () => {
