@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Page, Category } from '../../types';
 import { Modal, Button } from '../ui';
-import { Share, Copy, Check, Clock, Trash2, CheckSquare, Square, ChevronRight } from 'lucide-react';
+import { Share, Copy, Check, Clock, Trash2, CheckSquare, Square, ChevronRight, FolderOpen } from 'lucide-react';
 import { shareApi } from '../../api/shares';
 import type { Share as ShareType } from '../../types';
 import { formatDate } from '../../utils/helpers';
@@ -201,6 +201,8 @@ function TreeNode({ cat, depth, selected, isCatChecked, isCatIndeterminate, togg
 
 export function ShareModal({ open, onClose, page }: ShareModalProps) {
   const currentPage = usePageStore(s => s.currentPage);
+  const focusedCategoryId = usePageStore(s => s.focusedCategoryId);
+  const focusedCategoryName = usePageStore(s => s.focusedCategoryPath[s.focusedCategoryPath.length - 1]?.name);
   const [expiry, setExpiry] = useState<string>('permanent');
   const [customDate, setCustomDate] = useState('');
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
@@ -252,12 +254,15 @@ export function ShareModal({ open, onClose, page }: ShareModalProps) {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const payload: { pageId: number; expiresAt: string | null; visibleItems?: number[] } = {
+      const payload: { pageId: number; expiresAt: string | null; visibleItems?: number[]; rootCategoryId?: number } = {
         pageId: page.id,
         expiresAt: getExpiryDate(),
       };
       if (limitVisibility && selectedItems.size > 0) {
         payload.visibleItems = Array.from(selectedItems);
+      }
+      if (focusedCategoryId) {
+        payload.rootCategoryId = focusedCategoryId;
       }
       const data = await shareApi.create(payload);
       const url = `${window.location.origin}/share/${data.shareCode}`;
@@ -288,7 +293,15 @@ export function ShareModal({ open, onClose, page }: ShareModalProps) {
     <Modal open={open} onClose={onClose} title="分享页面" size="sm">
       <div className="space-y-4">
         <p className="text-sm text-text-secondary">
-          分享 <strong className="text-text-primary">{page.name}</strong> 页面给朋友
+          {focusedCategoryId ? (
+            <>
+              分享「<strong className="text-text-primary">{focusedCategoryName}</strong>」分类给朋友
+            </>
+          ) : (
+            <>
+              分享 <strong className="text-text-primary">{page.name}</strong> 页面给朋友
+            </>
+          )}
         </p>
 
         {generatedLink ? (

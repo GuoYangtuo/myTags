@@ -41,6 +41,7 @@ export interface Share {
   shareCode: string;
   expiresAt: string | null;
   visibleItems: number[] | null;
+  rootCategoryId: number | null;
   createdAt: string;
   page?: { id: number; name: string };
 }
@@ -48,12 +49,15 @@ export interface Share {
 export interface ShareData {
   page: Page & { user?: { nickname: string; avatarSeed: string } };
   expiresAt: string | null;
+  rootCategoryId?: number | null;
+  rootCategoryName?: string | null;
 }
 
 export interface CreateSharePayload {
   pageId: number;
   expiresAt?: string | null;
   visibleItems?: number[];
+  rootCategoryId?: number;
 }
 
 export interface PublicUser {

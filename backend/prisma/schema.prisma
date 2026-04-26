@@ -45,6 +45,7 @@ model Share {
   shareCode   String    @unique
   expiresAt   DateTime?
   visibleItems String?  @db.LongText  // JSON array of category/tag IDs, null = all visible
+  rootCategoryId Int?                          // If set, share shows only this category's sub-tree
   createdAt   DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -161,7 +161,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
                 <span className="sm:hidden">编辑</span>
               </Button>
             )}
-            {!isFocusMode && currentPage && (
+            {currentPage && (
               <Button variant="primary" size="sm" onClick={onShareOpen} className="hidden md:flex">
                 <Share2 size={14} className="mr-1" />
                 分享

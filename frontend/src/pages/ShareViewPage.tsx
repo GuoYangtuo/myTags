@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicApi } from '../api/public';
 import type { ShareData, Category } from '../types';
-import { ChevronDown, ChevronRight, ExternalLink, Clock, User, HelpCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Clock, HelpCircle } from 'lucide-react';
 import { formatDate, isNoConfidence } from '../utils/helpers';
 import { TagDescriptionTooltip } from '../components/tag/TagDescriptionTooltip';
 
@@ -127,18 +127,10 @@ export function ShareViewPage() {
     <div className="min-h-screen bg-bg-primary">
       <header className="border-b-2 border-border-strong bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center gap-3 md:gap-4">
-          <img
-            src={`https://api.dicebear.com/7.x/shapes/svg?seed=${page.user!.avatarSeed}&backgroundColor=ff6b35`}
-            alt="avatar"
-            className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-border-strong flex-shrink-0"
-          />
           <div className="flex-1 min-w-0">
             <h1 className="font-bold font-heading text-base md:text-lg truncate">
-              {page.user!.nickname} 的标签
+              {data.rootCategoryName}
             </h1>
-            {page.description && (
-              <p className="text-xs md:text-sm text-text-secondary truncate">{page.description}</p>
-            )}
           </div>
           {expiresAt && (
             <div className="flex items-center gap-1.5 text-xs text-text-secondary flex-shrink-0">
@@ -152,10 +144,6 @@ export function ShareViewPage() {
       <main className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
         <div className="mb-6 md:mb-8">
           <h2 className="text-xl md:text-2xl font-bold font-heading mb-1">{page.name}</h2>
-          <div className="flex items-center gap-2 text-sm text-text-secondary">
-            <User size={14} />
-            <span>由 {page.user!.nickname} 创建</span>
-          </div>
         </div>
 
         {(page.categories ?? []).length === 0 ? (

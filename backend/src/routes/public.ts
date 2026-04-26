@@ -92,6 +92,26 @@ router.get('/share/:code', async (req: Request, res: Response) => {
       pageContent = { categories: [] };
     }
 
+    // 如果设置了 rootCategoryId，只显示该分类的子内容，并记录名称用于前端展示
+    let rootCategoryName: string | null = null;
+    if (share.rootCategoryId) {
+      const findCategory = (cats: CategoryData[], id: number): CategoryData | null => {
+        for (const c of cats) {
+          if (c.id === id) return c;
+          const found = findCategory(c.children, id);
+          if (found) return found;
+        }
+        return null;
+      };
+      const rootCat = findCategory(pageContent.categories, share.rootCategoryId);
+      if (rootCat) {
+        rootCategoryName = rootCat.name;
+        pageContent = { categories: [rootCat] };
+      } else {
+        pageContent = { categories: [] };
+      }
+    }
+
     // 如果设置了可见范围，过滤分类
     if (visibleIds !== null) {
       const filterCategories = (cats: CategoryData[]): CategoryData[] => {
@@ -115,6 +135,8 @@ router.get('/share/:code', async (req: Request, res: Response) => {
         user: share.page.user,
       },
       expiresAt: share.expiresAt,
+      rootCategoryId: share.rootCategoryId,
+      rootCategoryName,
     });
   } catch (err) {
     console.error(err);
