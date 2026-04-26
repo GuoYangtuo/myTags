@@ -16,6 +16,7 @@ interface PageEditorProps {
 export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorProps) {
   const {
     currentPage,
+    loading,
     updatePage,
     createTag,
     updateTag,
@@ -60,6 +61,17 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
     }
     return flat;
   }, [currentPage?.categories]);
+
+  if (loading && currentPage) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-text-secondary">
+        <div className="text-center px-4">
+          <div className="animate-spin w-8 h-8 border-2 border-accent-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-base md:text-lg font-medium">加载中...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentPage) {
     return (
