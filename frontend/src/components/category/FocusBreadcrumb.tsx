@@ -11,7 +11,7 @@ export function FocusBreadcrumb() {
     <div className="flex items-center gap-1 text-sm min-w-0 overflow-hidden">
       <button
         onClick={() => unfocusCategory()}
-        className="text-text-secondary font-medium truncate hover:text-text-primary transition-colors shrink-0 max-w-[120px]"
+        className="px-2 py-0.5 rounded-lg text-text-secondary font-medium truncate hover:text-text-primary hover:bg-bg-secondary transition-all shrink-0 max-w-[120px]"
         title="返回页面"
       >
         {currentPage?.name ?? ''}
@@ -23,7 +23,7 @@ export function FocusBreadcrumb() {
           <React.Fragment key={item.id}>
             <ChevronRight size={14} className="text-text-secondary/40 flex-shrink-0 select-none pointer-events-none" />
             {isLast ? (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-primary/10 text-accent-primary font-bold truncate shrink-0 max-w-[160px]">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-accent-primary/10 text-accent-primary font-bold truncate hover:bg-accent-primary/15 transition-all shrink-0 max-w-[160px]">
                 <FolderOpen size={13} className="flex-shrink-0" />
                 {item.name}
               </span>
