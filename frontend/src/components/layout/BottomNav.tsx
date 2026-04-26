@@ -9,7 +9,7 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ onShare }: BottomNavProps) {
-  const { pages, currentPage, setCurrentPage, createPage } = usePageStore();
+  const { pages, currentPage, setCurrentPage, createPage, fetchPage } = usePageStore();
   const { user } = useAuthStore();
   const [showPageList, setShowPageList] = useState(false);
   const [showNewPage, setShowNewPage] = useState(false);
@@ -21,6 +21,13 @@ export function BottomNav({ onShare }: BottomNavProps) {
     setNewPageName('');
     setShowNewPage(false);
     setCurrentPage(page);
+  };
+
+  const doSwitchPage = (page: any) => {
+    setCurrentPage(page);
+    if (!usePageStore.getState().loadedPages[page.id]) {
+      fetchPage(page.id);
+    }
   };
 
   return (
@@ -41,7 +48,7 @@ export function BottomNav({ onShare }: BottomNavProps) {
               <button
                 key={page.id}
                 onClick={() => {
-                  setCurrentPage(page);
+                  doSwitchPage(page);
                   setShowPageList(false);
                 }}
                 className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
