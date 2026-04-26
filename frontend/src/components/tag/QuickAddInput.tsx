@@ -18,14 +18,18 @@ const CONFIDENCE_LABEL_PRESETS = [
 interface QuickAddInputProps {
   categories: Category[];
   onAdd: (name: string, categoryId: number, confidence?: number, confidenceLabel?: string) => void;
+  onAddRoot?: (name: string, confidence?: number, confidenceLabel?: string) => void;
   currentCategoryId?: number;
 }
 
+// 代表无分类标签的伪分类 ID
+const ROOT_PSEUDO_ID = -999;
+
 interface FlatCat { cat: Category; depth: number }
 
-export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAddInputProps) {
+export function QuickAddInput({ categories, onAdd, onAddRoot, currentCategoryId }: QuickAddInputProps) {
   const [value, setValue] = useState('');
-  const [selectedCatId, setSelectedCatId] = useState<number | null>(currentCategoryId || null);
+  const [selectedCatId, setSelectedCatId] = useState<number | null>(currentCategoryId || ROOT_PSEUDO_ID);
   const [showDropdown, setShowDropdown] = useState(false);
   const [useConfidence, setUseConfidence] = useState(true);
   const [confidence, setConfidence] = useState(100);
@@ -66,7 +70,11 @@ export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAdd
   const handleSubmit = () => {
     if (!value.trim() || !selectedCatId) return;
     const finalConfidence = useConfidence ? confidence : NO_CONFIDENCE_VALUE;
-    onAdd(value.trim(), selectedCatId, finalConfidence, confidenceLabel);
+    if (selectedCatId === ROOT_PSEUDO_ID) {
+      onAddRoot?.(value.trim(), finalConfidence, confidenceLabel);
+    } else {
+      onAdd(value.trim(), selectedCatId, finalConfidence, confidenceLabel);
+    }
     setValue('');
   };
 
@@ -91,7 +99,7 @@ export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAdd
             onClick={() => setShowDropdown(!showDropdown)}
             className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-border-strong bg-bg-secondary hover:bg-border-light transition-colors text-sm font-medium h-10 min-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis"
           >
-            <span className="truncate">{selectedCat?.cat.name || '选择分类'}</span>
+            <span className="truncate">{selectedCatId === ROOT_PSEUDO_ID ? '无分类' : selectedCat?.cat.name || '选择分类'}</span>
             <ChevronDown size={14} className={`flex-shrink-0 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
 
@@ -100,6 +108,16 @@ export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAdd
             className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter"
             onMouseDown={(e) => e.stopPropagation()}
           >
+            <button
+              key="__root__"
+              onClick={() => { setSelectedCatId(ROOT_PSEUDO_ID); setShowDropdown(false); }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary transition-colors font-medium ${selectedCatId === ROOT_PSEUDO_ID ? 'bg-accent-primary/10 text-accent-primary' : ''}`}
+            >
+              无分类
+            </button>
+            {flatCategories.length > 0 && (
+              <div className="border-t border-border-light" />
+            )}
             {flatCategories.map(({ cat, depth }) => (
               <button
                 key={cat.id}
@@ -154,7 +172,7 @@ export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAdd
               onClick={() => setShowDropdown(!showDropdown)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-border-strong bg-bg-secondary hover:bg-border-light transition-colors text-sm font-medium h-10 w-full whitespace-nowrap overflow-hidden text-ellipsis"
             >
-              <span className="truncate">{selectedCat?.cat.name || '选择分类'}</span>
+              <span className="truncate">{selectedCatId === ROOT_PSEUDO_ID ? '无分类' : selectedCat?.cat.name || '选择分类'}</span>
               <ChevronDown size={14} className={`flex-shrink-0 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
             </button>
 
@@ -163,6 +181,16 @@ export function QuickAddInput({ categories, onAdd, currentCategoryId }: QuickAdd
             className="absolute top-full left-0 mt-1 bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] z-20 max-h-64 overflow-y-auto category-enter"
             onMouseDown={(e) => e.stopPropagation()}
           >
+            <button
+              key="__root__"
+              onClick={() => { setSelectedCatId(ROOT_PSEUDO_ID); setShowDropdown(false); }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary transition-colors font-medium ${selectedCatId === ROOT_PSEUDO_ID ? 'bg-accent-primary/10 text-accent-primary' : ''}`}
+            >
+              无分类
+            </button>
+            {flatCategories.length > 0 && (
+              <div className="border-t border-border-light" />
+            )}
             {flatCategories.map(({ cat, depth }) => (
               <button
                 key={cat.id}

@@ -146,12 +146,52 @@ export function ShareViewPage() {
           <h2 className="text-xl md:text-2xl font-bold font-heading mb-1">{page.name}</h2>
         </div>
 
-        {(page.categories ?? []).length === 0 ? (
+        {(page.categories ?? []).length === 0 && (page.rootTags ?? []).length === 0 ? (
           <div className="text-center py-16 text-text-secondary">
             <p>这个页面还没有标签</p>
           </div>
         ) : (
           <div className="space-y-4">
+            {(page.rootTags ?? []).length > 0 && (
+              <div>
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {(page.rootTags ?? []).map((tag) => (
+                    <div key={tag.id} className="bg-bg-card rounded-xl border-2 border-border-strong p-3 group">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="font-bold font-heading text-base truncate">{tag.name}</span>
+                          {tag.description && (
+                            <TagDescriptionTooltip tagName={tag.name} description={tag.description}>
+                              <HelpCircle size={14} className="text-text-secondary/80 flex-shrink-0 cursor-help" />
+                            </TagDescriptionTooltip>
+                          )}
+                          {!isNoConfidence(tag.confidence) && (
+                            <span className="text-xs text-text-secondary/60 flex-shrink-0">
+                              {tag.confidenceLabel} {tag.confidence}%
+                            </span>
+                          )}
+                        </div>
+                        {tag.navUrl && (
+                          <a
+                            href={tag.navUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 rounded text-accent-tertiary hover:bg-accent-tertiary/10 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            title={`打开链接: ${tag.navUrl}`}
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        )}
+                      </div>
+                      {isNoConfidence(tag.confidence) && (
+                        <p className="text-xs text-text-secondary/50 italic mt-2">不使用置信度</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {(page.categories ?? []).map((cat) => (
               <PublicCategory key={cat.id} category={cat} />
             ))}

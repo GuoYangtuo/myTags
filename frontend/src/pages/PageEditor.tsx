@@ -21,6 +21,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
     loading,
     updatePage,
     createTag,
+    createRootTag,
     updateTag,
     deleteTag,
     reorderTags,
@@ -175,6 +176,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
             <QuickAddInput
               categories={focusDisplayCategories}
               onAdd={(name, categoryId, confidence, confidenceLabel) => createTag(categoryId, name, confidence, undefined, confidenceLabel)}
+              onAddRoot={(name, confidence, confidenceLabel) => createRootTag(name, confidence, undefined, confidenceLabel)}
             />
 
             {focusDisplayTags.length > 0 && (
@@ -223,7 +225,24 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorP
             <QuickAddInput
               categories={currentPage.categories ?? []}
               onAdd={handleAddTag}
+              onAddRoot={(name, confidence, confidenceLabel) => createRootTag(name, confidence, undefined, confidenceLabel)}
             />
+
+            {/* 无分类标签 */}
+            {(currentPage.rootTags ?? []).length > 0 && (
+              <div className="mb-6">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {(currentPage.rootTags ?? []).map((tag) => (
+                    <TagCard
+                      key={tag.id}
+                      tag={tag}
+                      onUpdate={(data) => { updateTag(tag.id, data); markDirty(); }}
+                      onDelete={() => { deleteTag(tag.id); markDirty(); }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <CategoryTree
               categories={currentPage.categories ?? []}

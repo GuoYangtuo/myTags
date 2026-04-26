@@ -13,6 +13,7 @@ export interface Page {
   createdAt: string;
   updatedAt: string;
   categories?: Category[];
+  rootTags?: Tag[];       // 与一级分类同级的标签
 }
 
 export interface Category {

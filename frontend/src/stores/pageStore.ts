@@ -51,9 +51,11 @@ interface PageState {
 
   // 标签操作
   createTag: (categoryId: number, name: string, confidence?: number, description?: string, confidenceLabel?: string) => void;
+  createRootTag: (name: string, confidence?: number, description?: string, confidenceLabel?: string) => void;
   updateTag: (id: number, data: { name?: string; description?: string; confidence?: number; confidenceLabel?: string; navUrl?: string | null }) => void;
   deleteTag: (id: number) => void;
   moveTag: (tagId: number, targetCategoryId: number) => void;
+  moveTagToRoot: (tagId: number) => void;
 
   // 拖拽排序
   reorderTags: (categoryId: number, tagIds: number[]) => void;
@@ -266,7 +268,7 @@ export const usePageStore = create<PageState>((set, get) => ({
 
     set({ saving: true });
     try {
-      const content = { categories: currentPage.categories ?? [] };
+      const content = { categories: currentPage.categories ?? [], rootTags: currentPage.rootTags ?? [] };
       const updated = await pageApi.saveContent(currentPage.id, content);
       set((state) => ({
         currentPage: updated,
@@ -406,6 +408,30 @@ export const usePageStore = create<PageState>((set, get) => ({
     });
   },
 
+  createRootTag: (name, confidence = 50, description = '', confidenceLabel = '置信度') => {
+    const newTag: Tag = {
+      id: generateId(),
+      name,
+      description,
+      confidence,
+      confidenceLabel,
+      navUrl: null,
+    };
+
+    set((state) => {
+      if (!state.currentPage) return state;
+      const newPage = {
+        ...state.currentPage,
+        rootTags: [...(state.currentPage.rootTags ?? []), newTag],
+      };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
   // ==================== 标签操作 ====================
 
   createTag: (categoryId, name, confidence = 50, description = '', confidenceLabel = '置信度') => {
@@ -439,6 +465,39 @@ export const usePageStore = create<PageState>((set, get) => ({
     });
   },
 
+  moveTagToRoot: (tagId) => {
+    set((state) => {
+      if (!state.currentPage) return state;
+
+      let movedTag: Tag | null = null;
+
+      const removeTag = (cats: Category[]): Category[] => {
+        return cats.map((c) => ({
+          ...c,
+          tags: c.tags.filter((t) => {
+            if (t.id === tagId) { movedTag = t; return false; }
+            return true;
+          }),
+          children: removeTag(c.children),
+        }));
+      };
+
+      const cats = removeTag(state.currentPage.categories ?? []);
+      if (!movedTag) return state;
+
+      const newPage = {
+        ...state.currentPage,
+        categories: cats,
+        rootTags: [...(state.currentPage.rootTags ?? []), movedTag],
+      };
+      return {
+        currentPage: newPage,
+        loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
+        isDirty: true,
+      };
+    });
+  },
+
   updateTag: (id, data) => {
     set((state) => {
       if (!state.currentPage) return state;
@@ -451,7 +510,10 @@ export const usePageStore = create<PageState>((set, get) => ({
         }));
       };
 
-      const newPage = { ...state.currentPage, categories: updateInTree(state.currentPage.categories ?? []) };
+      const rootTags = (state.currentPage.rootTags ?? []).map((t) =>
+        t.id === id ? { ...t, ...data } : t
+      );
+      const newPage = { ...state.currentPage, categories: updateInTree(state.currentPage.categories ?? []), rootTags };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
@@ -472,7 +534,8 @@ export const usePageStore = create<PageState>((set, get) => ({
         }));
       };
 
-      const newPage = { ...state.currentPage, categories: removeFromTree(state.currentPage.categories ?? []) };
+      const rootTags = (state.currentPage.rootTags ?? []).filter((t) => t.id !== id);
+      const newPage = { ...state.currentPage, categories: removeFromTree(state.currentPage.categories ?? []), rootTags };
       return {
         currentPage: newPage,
         loadedPages: { ...state.loadedPages, [state.currentPage.id]: newPage },
