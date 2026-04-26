@@ -9,6 +9,7 @@ interface AuthState {
   lastAuthChange: number;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, nickname?: string) => Promise<void>;
+  updateProfile: (nickname: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
 }
@@ -29,6 +30,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     const data = await authApi.register({ email, password, nickname });
     localStorage.setItem('mytags_token', data.token);
     set({ user: data.user, token: data.token, lastAuthChange: Date.now() });
+  },
+
+  updateProfile: async (nickname) => {
+    const updated = await authApi.updateProfile(nickname);
+    set((state) => ({ user: state.user ? { ...state.user, nickname: updated.nickname } : null }));
   },
 
   logout: () => {

@@ -197,4 +197,27 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+const updateProfileSchema = z.object({
+  nickname: z.string().min(1).max(30),
+});
+
+router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const data = updateProfileSchema.parse(req.body);
+    const user = await prisma.user.update({
+      where: { id: req.userId },
+      data: { nickname: data.nickname },
+      select: { id: true, email: true, nickname: true, avatarSeed: true },
+    });
+    res.json(user);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      res.status(400).json({ error: err.errors });
+      return;
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

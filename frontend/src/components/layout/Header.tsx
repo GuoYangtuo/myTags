@@ -3,11 +3,13 @@ import { useAuthStore } from '../../stores/authStore';
 import { usePageStore } from '../../stores/pageStore';
 import { Button } from '../ui';
 import { Check, Loader2 } from 'lucide-react';
+import { ProfileModal } from '../auth/ProfileModal';
 
 export function Header() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateProfile } = useAuthStore();
   const { saving, isDirty, saveContent, currentPage } = usePageStore();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const handleSave = async () => {
     if (saving || !isDirty) return;
@@ -91,6 +93,12 @@ export function Header() {
                     {user.email}
                   </div>
                   <button
+                    onClick={() => { setProfileModalOpen(true); setMenuOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors text-left"
+                  >
+                    编辑资料
+                  </button>
+                  <button
                     onClick={() => { logout(); setMenuOpen(false); }}
                     className="w-full px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors text-left"
                   >
@@ -102,6 +110,13 @@ export function Header() {
           </div>
         )}
       </div>
+
+      <ProfileModal
+        open={profileModalOpen}
+        nickname={user?.nickname ?? ''}
+        onSave={async (nickname) => { await updateProfile(nickname); setProfileModalOpen(false); }}
+        onCancel={() => setProfileModalOpen(false)}
+      />
     </header>
   );
 }
