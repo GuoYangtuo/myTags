@@ -9,10 +9,12 @@ import { PageEditor } from './pages/PageEditor';
 import { ShareViewPage } from './pages/ShareViewPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { ConfirmDialog } from './components/ui/ConfirmDialog';
+import { ShareModal } from './components/share/ShareModal';
 
 function AppLayout() {
   const { user } = useAuthStore();
   const { currentPage, fetchPages, fetchPage, setCurrentPage, confirmState } = usePageStore();
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -38,11 +40,15 @@ function AppLayout() {
           <Sidebar />
         </div>
 
-        <PageEditor />
+        <PageEditor shareOpen={shareOpen} onShareOpen={() => setShareOpen(true)} onShareClose={() => setShareOpen(false)} />
 
         {/* Mobile bottom navigation */}
-        <BottomNav />
+        <BottomNav onShare={() => setShareOpen(true)} />
       </div>
+
+      {currentPage && (
+        <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} page={currentPage} />
+      )}
 
       <ConfirmDialog
         open={confirmState.open}

@@ -5,9 +5,15 @@ import { CategoryTree } from '../components/category/CategoryTree';
 import { QuickAddInput } from '../components/tag/QuickAddInput';
 import { ShareModal } from '../components/share/ShareModal';
 import { Button, Modal, Input } from '../components/ui';
-import { Share2, Settings, Globe } from 'lucide-react';
+import { Settings, Share2, Globe } from 'lucide-react';
 
-export function PageEditor() {
+interface PageEditorProps {
+  shareOpen: boolean;
+  onShareOpen: () => void;
+  onShareClose: () => void;
+}
+
+export function PageEditor({ shareOpen, onShareOpen, onShareClose }: PageEditorProps) {
   const {
     currentPage,
     updatePage,
@@ -25,7 +31,6 @@ export function PageEditor() {
     moveCategory,
   } = usePageStore();
   const { user } = useAuthStore();
-  const [shareOpen, setShareOpen] = useState(false);
   const [editDescOpen, setEditDescOpen] = useState(false);
   const [editDesc, setEditDesc] = useState('');
   const [editNameOpen, setEditNameOpen] = useState(false);
@@ -100,7 +105,7 @@ export function PageEditor() {
               <span className="hidden sm:inline">编辑页面</span>
               <span className="sm:hidden">编辑</span>
             </Button>
-            <Button variant="primary" size="sm" onClick={() => setShareOpen(true)}>
+            <Button variant="primary" size="sm" onClick={onShareOpen} className="hidden md:flex">
               <Share2 size={14} className="mr-1" />
               分享
             </Button>
@@ -128,7 +133,7 @@ export function PageEditor() {
         />
       </div>
 
-      <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} page={currentPage} />
+      <ShareModal open={shareOpen} onClose={onShareClose} page={currentPage} />
 
       <Modal open={editDescOpen} onClose={() => setEditDescOpen(false)} title="编辑页面信息" size="sm">
         <div className="space-y-4">
