@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { usePageStore } from '../stores/pageStore';
 import { CategoryTree } from '../components/category/CategoryTree';
 import { FocusBreadcrumb } from '../components/category/FocusBreadcrumb';
@@ -48,6 +48,18 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
   const [editDesc, setEditDesc] = useState('');
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [editName, setEditName] = useState('');
+
+  // Mobile sunburst container: height equals its own width (square) via ResizeObserver
+  const [mobileSunburstHeight, setMobileSunburstHeight] = useState(0);
+  const mobileSunburstRefCallback = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      setMobileSunburstHeight(entries[0]?.contentRect.width ?? 0);
+    });
+    ro.observe(el);
+    setMobileSunburstHeight(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -259,7 +271,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
       )}
     </>
   );
-
+  
   return (
     <>
       {/* Normal full-width layout */}
@@ -322,7 +334,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
 
                 {focusDisplayTags.length > 0 && (
                   <div className="mb-4">
-                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
                       {focusDisplayTags.map((tag) => (
                         <TagCard
                           key={tag.id}
@@ -361,7 +373,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
 
                 {(currentPage.rootTags ?? []).length > 0 && (
                   <div className="mb-6">
-                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
                       {(currentPage.rootTags ?? []).map((tag) => (
                         <TagCard
                           key={tag.id}
@@ -404,7 +416,11 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
       {sunburstOpen && sunburstSquareSize === 'none' && (
         <div className="flex flex-col">
           {/* Mobile sunburst top — scrolls into view as user scrolls the page */}
-          <div className="block md:hidden w-full flex-shrink-0 border-b-2 border-border-strong bg-bg-secondary/30" style={{ height: '50vh' }}>
+          <div
+            className="block md:hidden w-full flex-shrink-0 border-b-2 border-border-strong bg-bg-secondary/30"
+            ref={mobileSunburstRefCallback}
+            style={{ height: mobileSunburstHeight > 0 ? `${mobileSunburstHeight}px` : '50vw' }}
+          >
             <SunburstChart />
           </div>
 
