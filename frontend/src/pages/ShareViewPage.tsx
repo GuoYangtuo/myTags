@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicApi } from '../api/public';
 import type { ShareData, Category } from '../types';
-import { ChevronDown, ChevronRight, ExternalLink, Clock, User, HelpCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Clock, User, HelpCircle, Heart } from 'lucide-react';
 import { formatDate, isNoConfidence, generateAvatarUrl } from '../utils/helpers';
 import { TagDescriptionTooltip } from '../components/tag/TagDescriptionTooltip';
+import { useAuthStore } from '../stores/authStore';
+import { useFavoritesStore } from '../stores/favoritesStore';
 
 function PublicCategory({ category, depth = 0 }: { category: Category; depth?: number }) {
   const [expanded, setExpanded] = useState(true);
@@ -89,6 +91,10 @@ export function ShareViewPage() {
   const [data, setData] = useState<ShareData | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const { user } = useAuthStore();
+  const { favorites, addFavorite, removeFavorite, fetchFavorites } = useFavoritesStore();
+
+  const isFavorited = code ? favorites.some(f => f.shareCode === code) : false;
 
   useEffect(() => {
     if (!code) return;
@@ -101,6 +107,21 @@ export function ShareViewPage() {
       })
       .finally(() => setLoading(false));
   }, [code]);
+
+  useEffect(() => {
+    if (user) {
+      fetchFavorites();
+    }
+  }, [user]);
+
+  const handleToggleFavorite = () => {
+    if (!code || !user) return;
+    if (isFavorited) {
+      removeFavorite(code);
+    } else {
+      addFavorite(code);
+    }
+  };
 
   if (loading) {
     return (
@@ -145,6 +166,19 @@ export function ShareViewPage() {
               <Clock size={12} />
               <span className="hidden sm:inline">{formatDate(expiresAt)}</span>
             </div>
+          )}
+          {user && code && (
+            <button
+              onClick={handleToggleFavorite}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-colors flex-shrink-0 ${
+                isFavorited
+                  ? 'bg-red-50 border-red-300 text-red-500 hover:bg-red-100'
+                  : 'bg-bg-card border-border-strong text-text-secondary hover:border-red-300 hover:text-red-400'
+              }`}
+            >
+              <Heart size={14} className={isFavorited ? 'fill-current' : ''} />
+              <span className="hidden sm:inline">{isFavorited ? '已收藏' : '收藏'}</span>
+            </button>
           )}
         </div>
       </header>

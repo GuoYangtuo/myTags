@@ -19,8 +19,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  pages  Page[]
-  shares Share[]
+  pages     Page[]
+  shares    Share[]
+  favorites Favorite[]
 }
 
 model Page {
@@ -50,4 +51,15 @@ model Share {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  shareCode String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shareCode])
 }

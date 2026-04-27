@@ -67,3 +67,16 @@ export interface PublicUser {
   avatarSeed: string;
   pages: { id: number; name: string; description: string }[];
 }
+
+export interface FavoriteItem {
+  shareCode: string;
+  createdAt: string;
+  page: {
+    id: number;
+    name: string;
+    description: string;
+    user?: { nickname: string; avatarSeed: string };
+  };
+  shareUser: { nickname: string; avatarSeed: string };
+  expiresAt: string | null;
+}

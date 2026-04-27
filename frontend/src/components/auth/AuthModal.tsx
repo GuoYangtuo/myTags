@@ -19,7 +19,7 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
       if (mode === 'login') {
         await login(identifier, password);
       } else {
-        await register(email, password, nickname || undefined);
+        await register(identifier, password, nickname || undefined);
       }
       onClose();
       setIdentifier('');

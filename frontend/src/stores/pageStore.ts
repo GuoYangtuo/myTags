@@ -18,9 +18,9 @@ interface PageState {
 
   fetchPages: () => Promise<void>;
   fetchPage: (id: number) => Promise<void>;
-  createPage: (name: string, description?: string) => Promise<Page>;
-  updatePage: (id: number, data: { name?: string; description?: string }) => Promise<void>;
-  deletePage: (id: number) => Promise<void>;
+  createPage: (name: string, description?: string) => Page;
+  updatePage: (id: number, data: { name?: string; description?: string }) => void;
+  deletePage: (id: number) => void;
   setCurrentPage: (page: Page | null) => void;
   isPageLoaded: (id: number) => boolean;
 
@@ -133,25 +133,62 @@ export const usePageStore = create<PageState>((set, get) => ({
     }
   },
 
-  createPage: async (name, description) => {
-    const page = await pageApi.create({ name, description });
-    set((state) => ({ pages: [...state.pages, page] }));
-    return page;
+  createPage: (name, description) => {
+    const stubId = generateId();
+    const stub: Page = {
+      id: stubId,
+      userId: -1,
+      name,
+      description: description ?? '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    set((state) => ({ pages: [...state.pages, stub] }));
+
+    pageApi.create({ name, description }).then((page) => {
+      set((state) => {
+        const newPages = state.pages.map((p) => (p.id === stubId ? page : p));
+        return {
+          pages: newPages,
+          currentPage: state.currentPage?.id === stubId ? page : state.currentPage,
+        };
+      });
+    }).catch(() => {
+      set((state) => ({ pages: state.pages.filter((p) => p.id !== stubId) }));
+    });
+
+    return stub;
   },
 
-  updatePage: async (id, data) => {
-    const page = await pageApi.update(id, data);
+  updatePage: (id, data) => {
+    const prev = get();
     set((state) => ({
-      pages: state.pages.map((p) => (p.id === id ? { ...p, ...page } : p)),
-      currentPage: state.currentPage?.id === id ? { ...state.currentPage, ...page } : state.currentPage,
+      pages: state.pages.map((p) => (p.id === id ? { ...p, ...data } : p)),
+      currentPage: state.currentPage?.id === id ? { ...state.currentPage, ...data } : state.currentPage,
       loadedPages: state.currentPage?.id === id
-        ? { ...state.loadedPages, [id]: { ...state.loadedPages[id], ...page } }
+        ? { ...state.loadedPages, [id]: { ...state.loadedPages[id], ...data } }
         : state.loadedPages,
     }));
+    pageApi.update(id, data).then((page) => {
+      set((state) => ({
+        pages: state.pages.map((p) => (p.id === id ? { ...p, ...page } : p)),
+        currentPage: state.currentPage?.id === id ? { ...state.currentPage, ...page } : state.currentPage,
+        loadedPages: state.currentPage?.id === id
+          ? { ...state.loadedPages, [id]: { ...state.loadedPages[id], ...page } }
+          : state.loadedPages,
+      }));
+    }).catch(() => {
+      set({
+        pages: prev.pages,
+        currentPage: prev.currentPage,
+        loadedPages: prev.loadedPages,
+      });
+    });
   },
 
-  deletePage: async (id) => {
-    await pageApi.delete(id);
+  deletePage: (id) => {
+    const prev = get();
     set((state) => {
       const { [id]: _removed, ...rest } = state.loadedPages;
       return {
@@ -159,6 +196,9 @@ export const usePageStore = create<PageState>((set, get) => ({
         currentPage: state.currentPage?.id === id ? null : state.currentPage,
         loadedPages: rest,
       };
+    });
+    pageApi.delete(id).catch(() => {
+      set({ pages: prev.pages, currentPage: prev.currentPage, loadedPages: prev.loadedPages });
     });
   },
 
