@@ -7,7 +7,6 @@ import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { PageEditor } from './pages/PageEditor';
 import { ShareViewPage } from './pages/ShareViewPage';
-import { FavoritesPage } from './pages/FavoritesPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { ConfirmDialog } from './components/ui/ConfirmDialog';
 import { ShareModal } from './components/share/ShareModal';
@@ -116,7 +115,6 @@ export default function App() {
       <Routes>
         <Route path="/share/:code" element={<ShareViewPage />} />
         <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
-        <Route path="/favorites" element={<FavoritesPage />} />
         <Route
           path="/*"
           element={

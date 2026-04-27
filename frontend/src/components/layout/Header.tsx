@@ -5,12 +5,14 @@ import { usePageStore } from '../../stores/pageStore';
 import { Button } from '../ui';
 import { Check, Loader2, ShieldCheck, Heart } from 'lucide-react';
 import { ProfileModal } from '../auth/ProfileModal';
+import { FavoritesModal } from '../favorites/FavoritesModal';
 
 export function Header() {
   const { user, logout, updateProfile } = useAuthStore();
   const { saving, isDirty, saveContent, currentPage } = usePageStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
 
   const handleSave = async () => {
     if (saving || !isDirty) return;
@@ -99,14 +101,13 @@ export function Header() {
                   >
                     编辑资料
                   </button>
-                  <Link
-                    to="/favorites"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors text-left"
+                  <button
+                    onClick={() => { setFavoritesModalOpen(true); setMenuOpen(false); }}
+                    className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors w-full"
                   >
                     <Heart size={15} />
                     收藏夹
-                  </Link>
+                  </button>
                   {user.id === 1 && (
                     <Link
                       to="/admin/users"
@@ -135,6 +136,10 @@ export function Header() {
         nickname={user?.nickname ?? ''}
         onSave={async (nickname) => { await updateProfile(nickname); setProfileModalOpen(false); }}
         onCancel={() => setProfileModalOpen(false)}
+      />
+      <FavoritesModal
+        open={favoritesModalOpen}
+        onClose={() => setFavoritesModalOpen(false)}
       />
     </header>
   );
