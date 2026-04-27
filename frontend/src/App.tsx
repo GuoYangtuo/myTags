@@ -10,6 +10,8 @@ import { ShareViewPage } from './pages/ShareViewPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { ConfirmDialog } from './components/ui/ConfirmDialog';
 import { ShareModal } from './components/share/ShareModal';
+import { AdminLayout } from './pages/admin/AdminLayout';
+import { UserManagement } from './pages/admin/UserManagement';
 
 function AppLayout() {
   const { user } = useAuthStore();
@@ -112,6 +114,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/share/:code" element={<ShareViewPage />} />
+        <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
         <Route
           path="/*"
           element={

@@ -14,8 +14,8 @@ const registerSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
+  identifier: z.string().min(1),
+  password: z.string().min(1),
 });
 
 // 初始页面内容模板
@@ -160,7 +160,14 @@ router.post('/login', async (req, res) => {
   try {
     const data = loginSchema.parse(req.body);
 
-    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: data.identifier },
+          { nickname: data.identifier },
+        ],
+      },
+    });
     if (!user) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;

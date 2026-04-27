@@ -5,7 +5,7 @@ import { LogIn, UserPlus } from 'lucide-react';
 
 export function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
@@ -17,12 +17,12 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
     setLoading(true);
     try {
       if (mode === 'login') {
-        await login(email, password);
+        await login(identifier, password);
       } else {
         await register(email, password, nickname || undefined);
       }
       onClose();
-      setEmail('');
+      setIdentifier('');
       setPassword('');
       setNickname('');
     } catch (err: any) {
@@ -54,10 +54,10 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
 
         <Input
-          label="邮箱"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          label="用户名 / 邮箱"
+          type="text"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
           placeholder="your@email.com"
         />
         <Input

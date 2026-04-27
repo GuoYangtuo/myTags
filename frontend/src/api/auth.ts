@@ -1,7 +1,7 @@
 import api from './client';
 import type { User } from '../types';
 
-export interface LoginPayload { email: string; password: string }
+export interface LoginPayload { identifier: string; password: string }
 export interface RegisterPayload { email: string; password: string; nickname?: string }
 
 export const authApi = {

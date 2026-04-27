@@ -7,7 +7,7 @@ interface AuthState {
   token: string | null;
   loading: boolean;
   lastAuthChange: number;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   register: (email: string, password: string, nickname?: string) => Promise<void>;
   updateProfile: (nickname: string) => Promise<void>;
   logout: () => void;
@@ -20,8 +20,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: true,
   lastAuthChange: 0,
 
-  login: async (email, password) => {
-    const data = await authApi.login({ email, password });
+  login: async (identifier, password) => {
+    const data = await authApi.login({ identifier, password });
     localStorage.setItem('mytags_token', data.token);
     set({ user: data.user, token: data.token, lastAuthChange: Date.now() });
   },

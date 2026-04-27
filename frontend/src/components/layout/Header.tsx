@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { usePageStore } from '../../stores/pageStore';
 import { Button } from '../ui';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, ShieldCheck } from 'lucide-react';
 import { ProfileModal } from '../auth/ProfileModal';
 
 export function Header() {
@@ -98,6 +99,16 @@ export function Header() {
                   >
                     编辑资料
                   </button>
+                  {user.id === 1 && (
+                    <Link
+                      to="/admin/users"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors text-left"
+                    >
+                      <ShieldCheck size={15} />
+                      管理后台
+                    </Link>
+                  )}
                   <button
                     onClick={() => { logout(); setMenuOpen(false); }}
                     className="w-full px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors text-left"
