@@ -15,9 +15,11 @@ interface PageEditorProps {
   onShareClose: () => void;
   sunburstOpen: boolean;
   onToggleSunburst: () => void;
+  /** "full" = full-area sunburst panel (desktop), "none" = editor-only, undefined = mobile split */
+  sunburstSquareSize?: 'full' | 'none';
 }
 
-export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen, onToggleSunburst }: PageEditorProps) {
+export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen, onToggleSunburst, sunburstSquareSize }: PageEditorProps) {
   const {
     currentPage,
     loading,
@@ -393,30 +395,22 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
         </div>
       )}
 
-      {/* Sunburst split-screen layout */}
-      {sunburstOpen && (
-        <div className="flex flex-1 overflow-hidden h-full">
-          {/* Left: Sunburst Chart (65%) */}
-          <div
-            className="relative h-full border-r-2 border-border-strong bg-bg-secondary/30 overflow-hidden"
-            style={{ width: '65%', flexShrink: 0 }}
-          >
-            <SunburstChart
-              categories={currentPage.categories ?? []}
-              focusedCategoryId={focusedCategoryId}
-              focusedCategoryPath={focusedCategoryPath}
-              onFocusCategory={focusCategory}
-              onUnfocusCategory={handleSunburstUnfocus}
-              onUnfocusToParent={handleSunburstUnfocusToParent}
-            />
+      {/* Full-area sunburst (desktop square panel) */}
+      {sunburstOpen && sunburstSquareSize === 'full' && (
+        <SunburstChart />
+      )}
+
+      {/* Mobile split: sunburst top + editor bottom */}
+      {sunburstOpen && sunburstSquareSize === 'none' && (
+        <div className="flex flex-col overflow-hidden h-full">
+          {/* Mobile sunburst top — square based on viewport width */}
+          <div className="block md:hidden w-full border-b-2 border-border-strong bg-bg-secondary/30" style={{ aspectRatio: '1/1', maxHeight: '50vh', flexShrink: 0 }}>
+            <SunburstChart />
           </div>
 
-          {/* Right: Editor (35%) */}
-          <div
-            className="flex-1 overflow-y-auto pb-24 md:pb-6"
-            style={{ width: '35%' }}
-          >
-            {/* Header with toggle button */}
+          {/* Editor panel */}
+          <div className="flex-1 overflow-y-auto pb-24">
+            {/* Editor header */}
             <div className="sticky top-0 z-10 bg-bg-primary border-b-2 border-border-light px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold font-heading text-sm text-text-primary truncate max-w-[200px]">
@@ -424,14 +418,9 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
                 </h2>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onToggleSunburst}
-                  title="关闭旭日图"
-                >
+                <Button variant="secondary" size="sm" onClick={onToggleSunburst} title="关闭旭日图">
                   <CircleDot size={14} className="mr-1" />
-                  <span className="hidden sm:inline">旭日图</span>
+                  <span>旭日图</span>
                 </Button>
                 <Button variant="primary" size="sm" onClick={onShareOpen} className="hidden md:flex">
                   <Share2 size={14} className="mr-1" />

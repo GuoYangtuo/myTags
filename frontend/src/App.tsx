@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { usePageStore } from './stores/pageStore';
@@ -43,13 +43,43 @@ function AppLayout() {
           </div>
         )}
 
-        <PageEditor
-          shareOpen={shareOpen}
-          onShareOpen={() => setShareOpen(true)}
-          onShareClose={() => setShareOpen(false)}
-          sunburstOpen={sunburstOpen}
-          onToggleSunburst={() => setSunburstOpen(v => !v)}
-        />
+        {/* Desktop sunburst panel: square container */}
+        {sunburstOpen && (
+          <div className="hidden md:flex h-full flex-shrink-0 border-r-2 border-border-strong bg-bg-secondary/30">
+            <div className="h-full aspect-square">
+              <PageEditor
+                shareOpen={shareOpen}
+                onShareOpen={() => setShareOpen(true)}
+                onShareClose={() => setShareOpen(false)}
+                sunburstOpen={sunburstOpen}
+                onToggleSunburst={() => setSunburstOpen(v => !v)}
+                sunburstSquareSize="full"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Main content */}
+        <div className={`flex-1 flex flex-col ${sunburstOpen ? 'overflow-hidden' : ''}`}>
+          {sunburstOpen ? (
+            <PageEditor
+              shareOpen={shareOpen}
+              onShareOpen={() => setShareOpen(true)}
+              onShareClose={() => setShareOpen(false)}
+              sunburstOpen={sunburstOpen}
+              onToggleSunburst={() => setSunburstOpen(v => !v)}
+              sunburstSquareSize="none"
+            />
+          ) : (
+            <PageEditor
+              shareOpen={shareOpen}
+              onShareOpen={() => setShareOpen(true)}
+              onShareClose={() => setShareOpen(false)}
+              sunburstOpen={sunburstOpen}
+              onToggleSunburst={() => setSunburstOpen(v => !v)}
+            />
+          )}
+        </div>
 
         {/* Mobile bottom navigation */}
         <BottomNav onShare={() => setShareOpen(true)} onToggleSunburst={() => setSunburstOpen(v => !v)} />
