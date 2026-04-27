@@ -402,14 +402,14 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
 
       {/* Mobile split: sunburst top + editor bottom */}
       {sunburstOpen && sunburstSquareSize === 'none' && (
-        <div className="flex flex-col overflow-hidden h-full">
-          {/* Mobile sunburst top — square based on viewport width */}
-          <div className="block md:hidden w-full border-b-2 border-border-strong bg-bg-secondary/30" style={{ aspectRatio: '1/1', maxHeight: '50vh', flexShrink: 0 }}>
+        <div className="flex flex-col">
+          {/* Mobile sunburst top — scrolls into view as user scrolls the page */}
+          <div className="block md:hidden w-full flex-shrink-0 border-b-2 border-border-strong bg-bg-secondary/30" style={{ height: '50vh' }}>
             <SunburstChart />
           </div>
 
           {/* Editor panel */}
-          <div className="flex-1 overflow-y-auto pb-24">
+          <div className="flex-1">
             {/* Editor header */}
             <div className="sticky top-0 z-10 bg-bg-primary border-b-2 border-border-light px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -429,7 +429,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
               </div>
             </div>
 
-            <div className="px-4 py-4">
+            <div className="px-4 py-4 pb-24">
               {renderEditorContent()}
             </div>
           </div>

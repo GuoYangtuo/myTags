@@ -37,10 +37,10 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-bg-primary">
       <Header />
-      <div className={`flex ${sunburstOpen ? 'h-[calc(100vh-57px)] overflow-hidden' : 'flex-1'}`}>
+      <div className={`flex ${sunburstOpen ? 'h-[calc(100vh-57px)]' : 'flex-1'}`}>
         {/* Desktop sidebar — hidden in sunburst mode */}
         {!sunburstOpen && (
-          <div className="hidden md:block">
+          <div className="hidden md:block h-full overflow-y-auto">
             <Sidebar />
           </div>
         )}
@@ -48,7 +48,7 @@ function AppLayout() {
         {/* Desktop sunburst panel: square container */}
         {sunburstOpen && (
           <div className="hidden md:flex h-full flex-shrink-0 border-r-2 border-border-strong bg-bg-secondary/30">
-            <div className="h-full aspect-square">
+            <div className="h-full aspect-square overflow-hidden">
               <PageEditor
                 shareOpen={shareOpen}
                 onShareOpen={() => setShareOpen(true)}
@@ -62,7 +62,7 @@ function AppLayout() {
         )}
 
         {/* Main content */}
-        <div className={`flex-1 flex flex-col ${sunburstOpen ? 'overflow-hidden' : ''}`}>
+        <div className="flex-1 flex flex-col overflow-y-auto">
           {sunburstOpen ? (
             <PageEditor
               shareOpen={shareOpen}

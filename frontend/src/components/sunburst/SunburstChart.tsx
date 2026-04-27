@@ -189,7 +189,7 @@ export function SunburstChart() {
   const size = Math.min(containerSize.width, containerSize.height);
   const cx = size / 2;
   const cy = size / 2;
-  const padding = 16;
+  const padding = 64;
   const maxRadius = (size / 2) - padding;
   const ringWidth = numRings > 0 ? maxRadius / numRings : maxRadius;
   const centerR = ringWidth * 0.5;
