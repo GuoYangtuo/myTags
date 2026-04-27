@@ -211,9 +211,43 @@ export function ShareViewPage() {
         )}
       </main>
 
-      <footer className="text-center py-8 text-xs text-text-secondary/40">
-        由 myTags 生成
+      <footer className="max-w-5xl mx-auto px-4 md:px-6 py-12 md:py-16">
+        <div className="bg-bg-card rounded-2xl border-2 border-border-strong p-6 md:p-10 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent-primary/10 mb-5">
+            <span className="text-2xl">🧪</span>
+          </div>
+          <h3 className="text-xl md:text-2xl font-bold font-heading mb-3">
+            你的成分是什么？
+          </h3>
+          <p className="text-text-secondary text-sm md:text-base max-w-lg mx-auto mb-6 leading-relaxed">
+            用标签 + 置信度，诚实又带点幽默地描述自己。<br className="hidden sm:block" />
+            社恐 80%、话痨 40%、羽毛球 95%……把这些分享给新朋友，比千字介绍高效一百倍。
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
+            {[
+              '🧪 带置信度的标签',
+              '📤 一键生成分享链接',
+              '🔒 链接灵活时效控制',
+              '⚡ 永久免费使用',
+            ].map((item) => (
+              <span key={item} className="text-xs md:text-sm bg-bg-primary rounded-lg px-3 py-1.5 border border-border-light">
+                {item}
+              </span>
+            ))}
+          </div>
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 bg-accent-primary hover:bg-accent-primary/90 text-white font-bold font-heading px-6 py-3 rounded-xl transition-colors"
+          >
+            打造我的成分页面
+            <ExternalLink size={16} />
+          </a>
+        </div>
       </footer>
+
+      <div className="text-center pb-8 text-xs text-text-secondary/40">
+        由 myTags 生成
+      </div>
     </div>
   );
 }
