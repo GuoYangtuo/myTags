@@ -84,7 +84,7 @@ jobs:
             
             # 重置数据库（不保留数据！！）
             echo "Resetting database..."
-            mysql -u root -p hh20061202 -e "DROP DATABASE mytags;"
+            mysql -uroot -phh20061202 -e "DROP DATABASE mytags;"
             cd /root/mytags/backend/
             npx prisma generate
             npx prisma db push
