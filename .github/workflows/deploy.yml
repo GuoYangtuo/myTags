@@ -81,6 +81,14 @@ jobs:
           username: ${{ secrets.SERVER_SSH_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            
+            # 重置数据库（不保留数据！！）
+            echo "Resetting database..."
+            mysql -u root -p hh20061202 -e "DROP DATABASE mytags;"
+            cd /root/mytags/backend/
+            npx prisma generate
+            npx prisma db push
+
             set -e
 
             echo "========== 部署 myTags =========="
