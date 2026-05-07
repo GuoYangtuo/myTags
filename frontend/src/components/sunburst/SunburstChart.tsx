@@ -187,11 +187,12 @@ export function SunburstChart() {
   const maxDepth = arcs.length > 0 ? Math.max(...arcs.map((a) => a.depth)) : 0;
   const numRings = maxDepth + 1;
   const size = Math.min(containerSize.width, containerSize.height);
+  console.log(numRings);
   const cx = size / 2;
   const cy = size / 2;
   const padding = 64;
   const maxRadius = (size / 2) - padding;
-  const ringWidth = numRings > 0 ? maxRadius / numRings : maxRadius;
+  const ringWidth = numRings > 0 ? maxRadius / (numRings + 0.5) : maxRadius;
   const centerR = ringWidth * 0.5;
 
   const getRingBounds = useCallback((depth: number) => ({
@@ -407,22 +408,17 @@ export function SunburstChart() {
         <foreignObject x={cx - centerButtonSize / 2} y={cy - centerButtonSize / 2} width={centerButtonSize} height={centerButtonSize}>
           <button
             onClick={handleCenterClick}
-            className="w-full h-full rounded-full bg-bg-card border-2 border-border-strong shadow-[2px_2px_0_var(--color-border-strong)] hover:shadow-[3px_3px_0_var(--color-border-strong)] active:shadow-[1px_1px_0_var(--color-border-strong)] transition-all flex flex-col items-center justify-center gap-0.5"
+            className="w-full h-full rounded-full bg-bg-card border-0 border-border-strong shadow-[2px_2px_0_var(--color-border-strong)] hover:shadow-[3px_3px_0_var(--color-border-strong)] active:shadow-[1px_1px_0_var(--color-border-strong)] transition-all flex flex-col items-center justify-center gap-0.5"
             title={isAtRoot ? '旭日图根视图' : '返回上级'}
           >
             {isAtRoot ? (
               <>
-                <svg width={Math.round(centerButtonSize * 0.35)} height={Math.round(centerButtonSize * 0.35)} viewBox="0 0 24 24" fill="none" stroke="#6B635A" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="12" r="6" />
-                  <circle cx="12" cy="12" r="2" />
-                </svg>
-                <span className="text-[8px] text-text-secondary font-medium">旭日图</span>
+                <span className="text-[18px] text-text-secondary font-medium">{currentPage?.name ?? ''}</span>
               </>
             ) : (
               <>
-                <ChevronUp size={Math.round(centerButtonSize * 0.28)} className="text-text-secondary" />
-                <span className="text-[8px] text-text-secondary font-medium">返回</span>
+                <ChevronUp size={Math.round(centerButtonSize * 2.8)} className="text-text-secondary" />
+                <span className="text-[18px] text-text-secondary font-medium">{focusedCategoryPath.find((item) => item.id === focusedCategoryId)?.name ?? ''}</span>
               </>
             )}
           </button>

@@ -116,7 +116,7 @@ export function Header() {
                       className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors w-full text-accent-primary font-medium"
                     >
                       <Crown size={15} />
-                      开通会员
+                      MyTags 专业版
                     </button>
                   ) : (
                     <button

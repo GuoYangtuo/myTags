@@ -8,7 +8,7 @@ import { z } from 'zod';
 const router = Router();
 
 // VIP 定价（元）
-const VIP_PRICE = '6.90';
+const VIP_PRICE = '6.90';  
 
 // 获取支付配置（从环境变量）
 function getPayConfig() {

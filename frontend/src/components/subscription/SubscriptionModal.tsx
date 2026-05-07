@@ -96,7 +96,7 @@ export function SubscriptionModal({ open, onClose }: SubscriptionModalProps) {
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-300 to-orange-500 flex items-center justify-center mb-3 shadow-lg">
           <Crown size={32} className="text-white" />
         </div>
-        <h2 className="text-xl font-bold font-heading">开通 VIP 会员</h2>
+        <h2 className="text-xl font-bold font-heading">订阅 MyTags 专业版</h2>
         {isVip ? (
           <div className="mt-2 px-3 py-1 rounded-full bg-green-50 border border-green-200 text-green-600 text-sm font-medium">
             您已是 VIP 会员
@@ -108,7 +108,7 @@ export function SubscriptionModal({ open, onClose }: SubscriptionModalProps) {
           </div>
         ) : (
           <div className="mt-1 text-sm text-text-secondary">
-            每月仅需 <span className="text-accent-primary font-bold text-base">¥{price}</span>
+            无限次访问本产品全部功能，仅需 <span className="text-accent-primary font-bold text-base">¥{price}</span> /月
           </div>
         )}
       </div>
@@ -200,7 +200,7 @@ export function SubscriptionModal({ open, onClose }: SubscriptionModalProps) {
           </button>
 
           <p className="mt-2 text-center text-xs text-text-secondary/60">
-            支付成功后 VIP 即时生效，可随时取消
+            支付成功后立即生效
           </p>
         </>
       )}
