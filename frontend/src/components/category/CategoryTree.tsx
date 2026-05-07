@@ -238,7 +238,7 @@ function SortableCategoryNodeInner({
             >
               {category.name}
               <span className="ml-1 md:ml-2 text-xs font-normal text-text-secondary whitespace-nowrap">
-                ({(category.children ?? []).reduce((s, c) => s + (c.tags ?? []).length, 0)} 项)
+                ({(category.tags ?? []).length + (category.children ?? []).reduce((s, c) => s + (c.tags ?? []).length, 0)} 项)
               </span>
             </button>
           )}

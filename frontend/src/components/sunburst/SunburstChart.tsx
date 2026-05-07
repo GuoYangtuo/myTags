@@ -187,7 +187,6 @@ export function SunburstChart() {
   const maxDepth = arcs.length > 0 ? Math.max(...arcs.map((a) => a.depth)) : 0;
   const numRings = maxDepth + 1;
   const size = Math.min(containerSize.width, containerSize.height);
-  console.log(numRings);
   const cx = size / 2;
   const cy = size / 2;
   const padding = 64;
