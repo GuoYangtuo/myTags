@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { usePageStore } from '../../stores/pageStore';
 import { Button } from '../ui';
-import { Check, Loader2, ShieldCheck, Heart, Crown } from 'lucide-react';
+import { Check, Loader2, ShieldCheck, Heart, Sparkles, User, Crown } from 'lucide-react';
 import { ProfileModal } from '../auth/ProfileModal';
 import { FavoritesModal } from '../favorites/FavoritesModal';
 import { SubscriptionModal } from '../subscription/SubscriptionModal';
@@ -42,9 +42,9 @@ export function Header() {
         {/* Right: Save status + User menu */}
         {user && (
           <div className="flex items-center gap-3">
-            {/* Save status — only shown when a page is loaded */}
+            {/* Save status */}
             {currentPage && (
-              <>
+              <div className="flex items-center gap-3">
                 {saving ? (
                   <span className="flex items-center gap-1.5 text-sm text-text-secondary/60">
                     <Loader2 size={14} className="animate-spin" />
@@ -72,14 +72,15 @@ export function Header() {
                     已保存
                   </span>
                 )}
-              </>
+              </div>
             )}
 
             {/* User menu */}
             <div className="relative">
+              {/* Desktop: full button with name */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-border-strong bg-bg-card hover:bg-bg-secondary transition-colors"
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-border-strong bg-bg-card hover:bg-bg-secondary transition-colors"
               >
                 <img
                   src={`https://api.dicebear.com/7.x/shapes/svg?seed=${user.avatarSeed}&backgroundColor=ff6b35`}
@@ -92,17 +93,24 @@ export function Header() {
                 </svg>
               </button>
 
+              {/* Mobile: avatar only */}
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="md:hidden flex items-center justify-center w-9 h-9 rounded-full border-2 border-border-strong bg-bg-card hover:bg-bg-secondary transition-colors overflow-hidden p-0"
+              >
+                <img
+                  src={`https://api.dicebear.com/7.x/shapes/svg?seed=${user.avatarSeed}&backgroundColor=ff6b35`}
+                  alt="avatar"
+                  className="w-full h-full"
+                />
+              </button>
+
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] overflow-hidden fade-in">
-                  <div className="px-4 py-2 border-b border-border-light text-sm text-text-secondary">
-                    {user.email}
+                  <div className="px-4 py-3 border-b border-border-light">
+                    <div className="font-medium text-sm">{user.nickname}</div>
+                    <div className="text-xs text-text-secondary/60 mt-0.5">{user.email}</div>
                   </div>
-                  <button
-                    onClick={() => { setProfileModalOpen(true); setMenuOpen(false); }}
-                    className="w-full px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors text-left"
-                  >
-                    编辑资料
-                  </button>
                   <button
                     onClick={() => { setFavoritesModalOpen(true); setMenuOpen(false); }}
                     className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors w-full"
@@ -110,13 +118,20 @@ export function Header() {
                     <Heart size={15} />
                     收藏夹
                   </button>
+                  <button
+                    onClick={() => { setProfileModalOpen(true); setMenuOpen(false); }}
+                    className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors w-full"
+                  >
+                    <User size={15} />
+                    修改昵称
+                  </button>
                   {(!user.isVip) ? (
                     <button
                       onClick={() => { setSubscriptionModalOpen(true); setMenuOpen(false); }}
                       className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors w-full text-accent-primary font-medium"
                     >
-                      <Crown size={15} />
-                      MyTags 专业版
+                      <Sparkles size={15} />
+                      解锁全部功能
                     </button>
                   ) : (
                     <button
@@ -124,7 +139,7 @@ export function Header() {
                       className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors w-full text-amber-600"
                     >
                       <Crown size={15} />
-                      我的会员
+                      MyTags 专业版
                     </button>
                   )}
                   {user.id === 1 && (

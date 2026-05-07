@@ -277,7 +277,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
       {/* Normal full-width layout */}
       {!sunburstOpen && (
         <div className="flex-1 overflow-y-auto pb-24 md:pb-6">
-          <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 md:py-6">
+          <div className="max-w-5xl mx-auto px-3 md:px-5 py-4 md:py-6">
             {isFocusMode && <FocusBreadcrumb />}
 
             <div className="flex items-start justify-between mb-2 gap-3 mt-2">
@@ -427,7 +427,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
           {/* Editor panel */}
           <div className="flex-1">
             {/* Editor header */}
-            <div className="sticky top-0 z-10 bg-bg-primary border-b-2 border-border-light px-4 py-3 flex items-center justify-between">
+            <div className="sticky top-0 z-10 bg-bg-primary border-b-2 border-border-light py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold font-heading text-sm text-text-primary truncate max-w-[200px]">
                   {displayPageName}
@@ -445,7 +445,7 @@ export function PageEditor({ shareOpen, onShareOpen, onShareClose, sunburstOpen,
               </div>
             </div>
 
-            <div className="px-4 py-4 pb-24">
+            <div className="px-3 py-3 pb-24">
               {renderEditorContent()}
             </div>
           </div>

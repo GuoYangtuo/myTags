@@ -34,7 +34,7 @@ export function ProfileModal({ open, nickname, onSave, onCancel }: ProfileModalP
       <div className="relative w-full max-w-sm bg-bg-card rounded-2xl border-2 border-border-strong shadow-[6px_6px_0_var(--color-border-strong)]">
         <div className="px-5 pt-5 pb-4">
           <h3 className="text-base font-bold font-heading mb-3">编辑资料</h3>
-          <label className="block text-sm font-medium mb-1.5">昵称</label>
+          <label className="block text-sm font-medium mb-1.5">昵称（别人将以此名看到你）</label>
           <input
             type="text"
             value={value}
