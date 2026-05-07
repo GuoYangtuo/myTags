@@ -17,6 +17,11 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
     setLoading(true);
     try {
       if (mode === 'login') {
+        if (identifier !== 'admin' && !identifier.includes('@')) {
+          setError('登录请输入邮箱地址');
+          setLoading(false);
+          return;
+        }
         await login(identifier, password);
       } else {
         await register(identifier, password, nickname || undefined);
@@ -54,7 +59,7 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
 
         <Input
-          label="用户名 / 邮箱"
+          label="邮箱"
           type="text"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}

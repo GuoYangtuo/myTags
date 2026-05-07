@@ -160,13 +160,15 @@ router.post('/login', async (req, res) => {
   try {
     const data = loginSchema.parse(req.body);
 
+    if (data.identifier !== 'admin' && !data.identifier.includes('@')) {
+      res.status(400).json({ error: 'Please use email to log in' });
+      return;
+    }
+
     const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: data.identifier },
-          { nickname: data.identifier },
-        ],
-      },
+      where: data.identifier === 'admin'
+        ? undefined
+        : { email: data.identifier },
     });
     if (!user) {
       res.status(401).json({ error: 'Invalid credentials' });
