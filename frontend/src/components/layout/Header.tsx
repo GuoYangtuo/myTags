@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { usePageStore } from '../../stores/pageStore';
 import { Button } from '../ui';
-import { Check, Loader2, ShieldCheck, Heart, Sparkles, User, Crown } from 'lucide-react';
+import { Check, Loader2, ShieldCheck, Heart, Sparkles, Crown, Edit2 } from 'lucide-react';
 import { ProfileModal } from '../auth/ProfileModal';
 import { FavoritesModal } from '../favorites/FavoritesModal';
 import { SubscriptionModal } from '../subscription/SubscriptionModal';
@@ -108,7 +108,13 @@ export function Header() {
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-bg-card rounded-xl border-2 border-border-strong shadow-[4px_4px_0_var(--color-border-strong)] overflow-hidden fade-in">
                   <div className="px-4 py-3 border-b border-border-light">
-                    <div className="font-medium text-sm">{user.nickname}</div>
+                    <div
+                      onClick={() => { setProfileModalOpen(true); setMenuOpen(false); }}
+                      className="flex items-center cursor-pointer hover:text-accent-primary transition-colors group"
+                    >
+                      <div className="font-medium text-sm group-hover:text-accent-primary">{user.nickname}</div>
+                      <Edit2 size={14} className="text-text-secondary/60 group-hover:text-accent-primary transition-colors flex-shrink-0 ml-1" />
+                    </div>
                     <div className="text-xs text-text-secondary/60 mt-0.5">{user.email}</div>
                   </div>
                   <button
@@ -117,13 +123,6 @@ export function Header() {
                   >
                     <Heart size={15} />
                     收藏夹
-                  </button>
-                  <button
-                    onClick={() => { setProfileModalOpen(true); setMenuOpen(false); }}
-                    className="flex items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-bg-secondary transition-colors w-full"
-                  >
-                    <User size={15} />
-                    修改昵称
                   </button>
                   {(!user.isVip) ? (
                     <button
