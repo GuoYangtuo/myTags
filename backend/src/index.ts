@@ -8,6 +8,7 @@ import shareRoutes from './routes/shares.js';
 import publicRoutes from './routes/public.js';
 import adminRoutes from './routes/admin.js';
 import favoritesRoutes from './routes/favorites.js';
+import subscriptionRoutes from './routes/subscription.js';
 
 export const prisma = new PrismaClient();
 
@@ -54,6 +55,7 @@ app.use('/api/shares', shareRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/favorites', favoritesRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

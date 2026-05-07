@@ -23,13 +23,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (identifier, password) => {
     const data = await authApi.login({ identifier, password });
     localStorage.setItem('mytags_token', data.token);
-    set({ user: data.user, token: data.token, lastAuthChange: Date.now() });
+    set((state) => ({
+      user: state.user
+        ? { ...state.user, ...data.user }
+        : data.user,
+      token: data.token,
+      lastAuthChange: Date.now(),
+    }));
   },
 
   register: async (email, password, nickname) => {
     const data = await authApi.register({ email, password, nickname });
     localStorage.setItem('mytags_token', data.token);
-    set({ user: data.user, token: data.token, lastAuthChange: Date.now() });
+    set((state) => ({
+      user: state.user
+        ? { ...state.user, ...data.user }
+        : data.user,
+      token: data.token,
+      lastAuthChange: Date.now(),
+    }));
   },
 
   updateProfile: async (nickname) => {

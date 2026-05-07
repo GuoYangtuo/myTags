@@ -19,9 +19,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // VIP 会员相关
+  isVip      Boolean  @default(false)    // 是否为VIP会员
+  vipExpireAt DateTime?                  // VIP过期时间，为null表示永久或未开通
+
   pages     Page[]
   shares    Share[]
   favorites Favorite[]
+  subscriptions Subscription[]
 }
 
 model Page {
@@ -62,4 +67,20 @@ model Favorite {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, shareCode])
+}
+
+// VIP 订阅订单
+model Subscription {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  orderNo     String   @unique           // 本地订单号（我这里叫out_trade_no）
+  tradeNo     String?  @unique           // 支付平台订单号（回调通知返回）
+  money       Decimal  @db.Decimal(10,2) // 充值金额（元），固定 6.90
+  status      String   @default("pending") // pending | paid | cancelled | refunded
+  payType     String?                      // alipay | wxpay
+  expiredAt   DateTime?                   // 本次订阅到期时间（按月计）
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

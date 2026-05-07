@@ -12,6 +12,7 @@ import { ConfirmDialog } from './components/ui/ConfirmDialog';
 import { ShareModal } from './components/share/ShareModal';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { UserManagement } from './pages/admin/UserManagement';
+import SubscriptionResultPage from './pages/SubscriptionResultPage';
 
 function AppLayout() {
   const { user } = useAuthStore();
@@ -115,6 +116,7 @@ export default function App() {
       <Routes>
         <Route path="/share/:code" element={<ShareViewPage />} />
         <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
+        <Route path="/subscription/result" element={<SubscriptionResultPage />} />
         <Route
           path="/*"
           element={

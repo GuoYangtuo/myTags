@@ -145,7 +145,7 @@ router.post('/register', async (req, res) => {
     });
 
     const token = generateToken(user.id);
-    res.json({ token, user: { id: user.id, email: user.email, nickname: user.nickname, avatarSeed: user.avatarSeed } });
+    res.json({ token, user: { id: user.id, email: user.email, nickname: user.nickname, avatarSeed: user.avatarSeed, isVip: user.isVip, vipExpireAt: user.vipExpireAt ? user.vipExpireAt.toISOString() : null } });
   } catch (err) {
     if (err instanceof z.ZodError) {
       res.status(400).json({ error: err.errors });
@@ -180,7 +180,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = generateToken(user.id);
-    res.json({ token, user: { id: user.id, email: user.email, nickname: user.nickname, avatarSeed: user.avatarSeed } });
+    res.json({ token, user: { id: user.id, email: user.email, nickname: user.nickname, avatarSeed: user.avatarSeed, isVip: user.isVip, vipExpireAt: user.vipExpireAt ? user.vipExpireAt.toISOString() : null } });
   } catch (err) {
     if (err instanceof z.ZodError) {
       res.status(400).json({ error: err.errors });
@@ -195,7 +195,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { id: true, email: true, nickname: true, avatarSeed: true },
+      select: { id: true, email: true, nickname: true, avatarSeed: true, isVip: true, vipExpireAt: true },
     });
     res.json(user);
   } catch (err) {

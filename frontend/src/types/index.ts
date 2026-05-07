@@ -3,6 +3,8 @@ export interface User {
   email: string;
   nickname: string;
   avatarSeed: string;
+  isVip?: boolean;
+  vipExpireAt?: string | null;
 }
 
 export interface Page {
