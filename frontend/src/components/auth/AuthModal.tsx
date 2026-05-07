@@ -24,6 +24,11 @@ export function AuthModal({ open, onClose }: { open: boolean; onClose: () => voi
         }
         await login(identifier, password);
       } else {
+        if (!identifier.includes('@')) {
+          setError('请输入有效的邮箱地址');
+          setLoading(false);
+          return;
+        }
         await register(identifier, password, nickname || undefined);
       }
       onClose();
