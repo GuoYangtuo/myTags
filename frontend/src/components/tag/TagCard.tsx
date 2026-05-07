@@ -153,7 +153,7 @@ export function TagCard({ tag, onUpdate, onDelete, isDragging, dragHandleRef, dr
           <p className="text-xs text-text-secondary/50 italic">不使用置信度</p>
         ) : (
           <div className="flex items-center gap-2 w-full">
-            <div onPointerDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+            <div className="flex-1 min-w-0" onPointerDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
               <ConfidenceSlider value={tag.confidence} onChange={(v) => onUpdate({ confidence: v })} label={tag.confidenceLabel} />
             </div>
           </div>

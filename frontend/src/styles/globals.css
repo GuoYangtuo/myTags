@@ -92,10 +92,30 @@
     border-radius: 4px;
     outline: none;
     cursor: pointer;
+    background: transparent;
+  }
+
+  input[type="range"].confidence-slider::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #94A3B8 0%, #FF6B35 50%, #22C55E 100%);
+  }
+
+  input[type="range"].confidence-slider::-moz-range-track {
+    height: 8px;
+    border-radius: 4px;
     background: linear-gradient(to right, #94A3B8 0%, #FF6B35 50%, #22C55E 100%);
   }
 
   input[type="range"].confidence-slider.sm {
+    height: 8px;
+  }
+
+  input[type="range"].confidence-slider.sm::-webkit-slider-runnable-track {
+    height: 8px;
+  }
+
+  input[type="range"].confidence-slider.sm::-moz-range-track {
     height: 8px;
   }
 
